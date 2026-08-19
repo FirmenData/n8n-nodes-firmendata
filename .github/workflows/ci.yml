@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # n8n's own linter enforces much of the community-node verification
+      # checklist. If this fails, the node is not eligible for verification.
+      - run: npm run lint
+      - run: npm run build
+
+  # Verified community nodes may not have ANY runtime dependencies. That rule
+  # is why this node is declarative rather than importing @firmendata/sdk, so
+  # assert it rather than trust it.
+  no-runtime-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: package.json declares no dependencies
+        run: |
+          node -e "
+            const p = require('./package.json');
+            const deps = Object.keys(p.dependencies ?? {});
+            if (deps.length) {
+              console.error('::error::Runtime dependencies added: ' + deps.join(', ') +
+                '. Verified n8n community nodes must have none.');
+              process.exit(1);
+            }
+            console.log('No runtime dependencies. Good.');
+          "
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,14 @@
+{
+  "node": "n8n-nodes-firmendata.firmenData",
+  "nodeVersion": "1.0",
+  "codexVersion": "1.0",
+  "categories": ["Data & Storage"],
+  "resources": {
+    "credentialDocumentation": [
+      { "url": "https://api.firmendata.com/v1/docs" }
+    ],
+    "primaryDocumentation": [
+      { "url": "https://github.com/FirmenData/n8n-nodes-firmendata" }
+    ]
+  }
+}
