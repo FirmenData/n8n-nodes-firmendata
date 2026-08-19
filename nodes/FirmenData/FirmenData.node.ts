@@ -8,7 +8,7 @@ import type { INodeType, INodeTypeDescription } from 'n8n-workflow';
  *
  * That is not a stylistic choice. n8n's community-node verification forbids
  * runtime dependencies entirely, so this package cannot import
- * `@firmendata/sdk` (or anything else) at runtime. Declarative routing means
+ * `firmendata (npm)` (or anything else) at runtime. Declarative routing means
  * there is nothing to import: no HTTP client, no auth handling, no retry
  * logic of our own. n8n renders the operations natively and users get
  * expression support on every field for free.
