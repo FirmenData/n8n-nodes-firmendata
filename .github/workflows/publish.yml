@@ -82,6 +82,11 @@ jobs:
         with:
           node-version: 'lts/*'
           cache: 'npm'
+          # `n8n-node release --help` lists this as a requirement for CI
+          # publishing, but the starter template omits it. Without it
+          # setup-node writes no .npmrc, so NODE_AUTH_TOKEN is never mapped
+          # and the OIDC exchange has no registry to authenticate against.
+          registry-url: 'https://registry.npmjs.org/'
 
       - name: Install dependencies
         run: npm ci
