@@ -1,11 +1,24 @@
 {
   "name": "n8n-nodes-firmendata",
   "version": "0.1.0",
-  "description": "n8n node for firmendata — German company data: register profiles, financials, shareholders and UBO",
+  "description": "n8n node for firmendata \u2014 German company data: register profiles, financials, shareholders and UBO",
   "license": "MIT",
   "homepage": "https://firmendata.com",
   "keywords": [
-    "n8n-community-node-package"
+    "n8n-community-node-package",
+    "n8n",
+    "n8n-node",
+    "firmendata",
+    "germany",
+    "german",
+    "company-data",
+    "business-registry",
+    "handelsregister",
+    "unternehmensregister",
+    "kyc",
+    "aml",
+    "ubo",
+    "due-diligence"
   ],
   "author": {
     "name": "FirmenData",
