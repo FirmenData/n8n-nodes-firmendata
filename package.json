@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-firmendata",
   "version": "0.1.0",
-  "description": "n8n node for firmendata \u2014 German company data: register profiles, financials, shareholders and UBO",
+  "description": "n8n node for firmendata — German company data: register profiles, financials, shareholders and UBO",
   "license": "MIT",
   "homepage": "https://firmendata.com",
   "keywords": [
@@ -26,7 +26,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/FirmenData/n8n-nodes-firmendata.git"
+    "url": "git+https://github.com/FirmenData/n8n-nodes-firmendata.git"
   },
   "engines": {
     "node": ">=20.15"
@@ -42,6 +42,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "n8n": {
     "n8nNodesApiVersion": 1,
     "strict": true,
