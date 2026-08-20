@@ -1,4 +1,5 @@
 import type { INodeType, INodeTypeDescription } from 'n8n-workflow';
+import { NodeConnectionTypes } from 'n8n-workflow';
 
 /**
  * FirmenData node — German company data.
@@ -13,10 +14,11 @@ import type { INodeType, INodeTypeDescription } from 'n8n-workflow';
  * logic of our own. n8n renders the operations natively and users get
  * expression support on every field for free.
  *
- * Every import here is **type-only**, so the compiled output imports nothing
- * whatsoever — not even from the `n8n-workflow` peer dependency. Hence the
- * `'main'` string literals below rather than `NodeConnectionTypes.Main`,
- * which would be a value import for no benefit.
+ * `NodeConnectionTypes.Main` rather than the string literal `'main'`: n8n's
+ * community-node scanner rejects the literal outright
+ * (@n8n/community-nodes/node-connection-type-literal), and a rejection there
+ * is automatic. It makes this the one value import in the package, from the
+ * `n8n-workflow` peer dependency that n8n itself provides at runtime.
  *
  * Options inside each `options: []` array are ordered alphabetically by
  * display name. n8n's linter enforces that; keep it when adding operations.
@@ -32,8 +34,8 @@ export class FirmenData implements INodeType {
     description:
       'Look up German company data: register profiles, financials, shareholders and UBO',
     defaults: { name: 'FirmenData' },
-    inputs: ['main'],
-    outputs: ['main'],
+    inputs: [NodeConnectionTypes.Main],
+    outputs: [NodeConnectionTypes.Main],
     usableAsTool: true,
     credentials: [{ name: 'firmenDataApi', required: true }],
     requestDefaults: {
