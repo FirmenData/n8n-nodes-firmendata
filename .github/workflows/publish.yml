@@ -68,6 +68,11 @@ jobs:
     name: Publish to npm
     runs-on: ubuntu-latest
 
+    # Not in the upstream template. Publishing is irreversible — a version
+    # can never be reused — so a tag should open a prompt, not a release.
+    # Whatever name is used here must also be entered as the Environment in
+    # npm's Trusted Publisher config, or the OIDC claim will not match.
+    environment: npm
     permissions:
       # Required to mint an OIDC token for npm provenance attestation.
       id-token: write
