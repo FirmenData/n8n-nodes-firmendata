@@ -76,7 +76,7 @@ export class FirmenData implements INodeType {
             action: 'Get a company',
             description: 'Full profile for one company',
             routing: {
-              request: { method: 'GET', url: '=/v1/companies/{{$parameter.euId}}' },
+              request: { method: 'GET', url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}' },
             },
           },
           {
@@ -85,7 +85,7 @@ export class FirmenData implements INodeType {
             action: 'Get company financials',
             description: 'Multi-year financial statements, parsed into figures',
             routing: {
-              request: { method: 'GET', url: '=/v1/companies/{{$parameter.euId}}/financials' },
+              request: { method: 'GET', url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/financials' },
             },
           },
           {
@@ -94,7 +94,7 @@ export class FirmenData implements INodeType {
             action: 'Get company register history',
             description: 'Chronological register history',
             routing: {
-              request: { method: 'GET', url: '=/v1/companies/{{$parameter.euId}}/history' },
+              request: { method: 'GET', url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/history' },
             },
           },
           {
@@ -105,7 +105,7 @@ export class FirmenData implements INodeType {
             routing: {
               request: {
                 method: 'GET',
-                url: '=/v1/companies/{{$parameter.euId}}/shareholders',
+                url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/shareholders',
               },
             },
           },
@@ -115,7 +115,7 @@ export class FirmenData implements INodeType {
             action: 'Get ultimate beneficial owners',
             description: 'Beneficial owners resolved through ownership chains',
             routing: {
-              request: { method: 'GET', url: '=/v1/companies/{{$parameter.euId}}/ubo' },
+              request: { method: 'GET', url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/ubo' },
             },
           },
           {

@@ -75,7 +75,12 @@ try {
   writeFileSync(join(work, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
 
   process.stdout.write('scan-check: installing the submission scanner…\n');
-  execFileSync('npm', ['install', '--silent', '--no-audit', '--no-fund', SCANNER], {
+  // --ignore-scripts: only the top-level scanner version is pinned, so its
+  // transitive dependencies must not get arbitrary code execution at install
+  // time — this runs inside the publish job, which can mint npm's OIDC
+  // publishing token. The scan only needs ESLint to load, and the ESLint
+  // ecosystem needs no lifecycle scripts.
+  execFileSync('npm', ['install', '--silent', '--no-audit', '--no-fund', '--ignore-scripts', SCANNER], {
     cwd: work,
     stdio: ['ignore', 'ignore', 'inherit'],
   });
