@@ -3,3 +3,8 @@ dist/
 *.tsbuildinfo
 .DS_Store
 .env
+
+# Compiled output lives in dist/ only — a stray tsc run must not land
+# build artifacts next to the sources of a public package.
+nodes/**/*.js
+credentials/**/*.js

@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       # n8n's own linter enforces much of the community-node verification
       # checklist. If this fails, the node is not eligible for verification.
       - run: npm run lint
