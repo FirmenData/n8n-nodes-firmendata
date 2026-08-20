@@ -22,6 +22,9 @@ jobs:
       # n8n's own linter enforces much of the community-node verification
       # checklist. If this fails, the node is not eligible for verification.
       - run: npm run lint
+      # The submission gate. `npm run lint` is a weaker, older ruleset — it
+      # passed 0.1.0, which the scanner then rejected. See scripts/scan-check.mjs.
+      - run: npm test
       - run: npm run build
 
   # Verified community nodes may not have ANY runtime dependencies. That rule
