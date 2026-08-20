@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-firmendata",
   "version": "0.1.0",
-  "description": "n8n node for firmendata — German company data: register profiles, financials, shareholders and UBO",
+  "description": "n8n node for firmendata \u2014 German company data: register profiles, financials, shareholders and UBO",
   "license": "MIT",
   "homepage": "https://firmendata.com",
   "keywords": [
@@ -58,8 +58,12 @@
   "devDependencies": {
     "@n8n/node-cli": "^0.23.0",
     "eslint": "^9.39.0",
+    "n8n-workflow": "*",
     "prettier": "^3.8.0",
     "release-it": "^20.2.0",
     "typescript": "^5.9.0"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
   }
 }
