@@ -32,11 +32,12 @@
     "node": ">=20.15"
   },
   "scripts": {
-    "build": "n8n-node build",
+    "build": "npm run generate -- --check && n8n-node build",
+    "generate": "node scripts/generate-filters.mjs",
     "dev": "n8n-node dev",
     "lint": "n8n-node lint",
     "lint:fix": "n8n-node lint --fix",
-    "test": "node scripts/scan-check.mjs",
+    "test": "npm run generate -- --check && node scripts/scan-check.mjs",
     "release": "n8n-node release",
     "prepublishOnly": "n8n-node prerelease"
   },
@@ -62,6 +63,7 @@
     "n8n-workflow": "*",
     "prettier": "^3.8.0",
     "release-it": "^20.2.0",
+    "title-case": "^3.0.3",
     "typescript": "^5.9.0"
   },
   "peerDependencies": {
