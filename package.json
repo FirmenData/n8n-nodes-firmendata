@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-firmendata",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "n8n node for firmendata — German company data: register profiles, financials, shareholders and UBO",
   "license": "MIT",
   "homepage": "https://firmendata.com",
