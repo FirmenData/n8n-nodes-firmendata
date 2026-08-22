@@ -1,6 +1,8 @@
 import type { INodeType, INodeTypeDescription } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
+import { searchFilters } from './searchFilters';
+
 /**
  * FirmenData node — German company data.
  *
@@ -41,6 +43,18 @@ export class FirmenData implements INodeType {
     requestDefaults: {
       baseURL: 'https://api.firmendata.com',
       headers: { Accept: 'application/json' },
+      // Without this, n8n serialises array query params through its global
+      // axios default of `qs.stringify(..., {arrayFormat: 'indices'})`, so a
+      // multi-value filter goes out as `rechtsform[0]=GmbH&rechtsform[1]=AG`.
+      // FastAPI binds `rechtsform`, finds nothing, and applies no filter —
+      // returning 200 with the *unfiltered* register. That is what made the
+      // Legal Form filter appear to do nothing, and it is silent: no error,
+      // just more results than you asked for.
+      //
+      // 'repeat' produces `rechtsform=GmbH&rechtsform=AG`, which is what the
+      // API binds. The generated filters additionally comma-join their values
+      // so they stay correct even if this default is ever lost.
+      arrayFormat: 'repeat',
     },
     properties: [
       {
@@ -206,145 +220,11 @@ export class FirmenData implements INodeType {
         placeholder: 'Add Filter',
         default: {},
         displayOptions: { show: { resource: ['company'], operation: ['search'] } },
-        // Alphabetical by displayName — enforced by n8n's linter.
-        options: [
-          {
-            displayName: 'City Names or IDs',
-            name: 'city',
-            type: 'string',
-            default: '',
-            placeholder: 'Berlin, Hamburg',
-            description: 'Comma-separated list of cities',
-            routing: {
-              request: {
-                qs: {
-                  city: '={{$value ? $value.split(",").map(s => s.trim()) : undefined}}',
-                },
-              },
-            },
-          },
-          {
-            displayName: 'Cursor',
-            name: 'cursor',
-            type: 'string',
-            default: '',
-            description:
-              'Pagination cursor from a previous response (<code>pagination.next_cursor</code>)',
-            routing: { request: { qs: { cursor: '={{$value || undefined}}' } } },
-          },
-          {
-            displayName: 'Federal State',
-            name: 'bundesland',
-            type: 'string',
-            default: '',
-            placeholder: 'Bayern',
-            description: 'Comma-separated list of federal states',
-            routing: {
-              request: {
-                qs: {
-                  bundesland: '={{$value ? $value.split(",").map(s => s.trim()) : undefined}}',
-                },
-              },
-            },
-          },
-          {
-            displayName: 'Has Website',
-            name: 'hasWebsite',
-            type: 'boolean',
-            default: false,
-            description: 'Whether to return only companies with a known website',
-            routing: { request: { qs: { has_website: '={{$value || undefined}}' } } },
-          },
-          {
-            displayName: 'Legal Form',
-            name: 'rechtsform',
-            type: 'string',
-            default: '',
-            placeholder: 'GmbH',
-            description: 'Comma-separated list of legal forms',
-            routing: {
-              request: {
-                qs: {
-                  rechtsform: '={{$value ? $value.split(",").map(s => s.trim()) : undefined}}',
-                },
-              },
-            },
-          },
-          {
-            displayName: 'Legal Status',
-            name: 'legalStatus',
-            type: 'multiOptions',
-            default: [],
-            description: 'Only companies in these legal states',
-            options: [
-              { name: 'Active', value: 'active' },
-              { name: 'Deleted', value: 'deleted' },
-              { name: 'Dissolved', value: 'dissolved' },
-              { name: 'In Liquidation', value: 'in_liquidation' },
-              { name: 'Insolvent', value: 'insolvent' },
-            ],
-            routing: {
-              request: { qs: { legal_status: '={{$value.length ? $value : undefined}}' } },
-            },
-          },
-          {
-            displayName: 'Maximum Revenue',
-            name: 'revenueMax',
-            type: 'number',
-            default: 0,
-            description: 'Only companies with at most this revenue, in EUR',
-            routing: { request: { qs: { revenue_max: '={{$value || undefined}}' } } },
-          },
-          {
-            displayName: 'Minimum Employees',
-            name: 'employeeCountMin',
-            type: 'number',
-            default: 0,
-            description: 'Only companies with at least this many employees',
-            routing: { request: { qs: { employee_count_min: '={{$value || undefined}}' } } },
-          },
-          {
-            displayName: 'Minimum Revenue',
-            name: 'revenueMin',
-            type: 'number',
-            default: 0,
-            description: 'Only companies with at least this revenue, in EUR',
-            routing: { request: { qs: { revenue_min: '={{$value || undefined}}' } } },
-          },
-          {
-            displayName: 'Person Name',
-            name: 'personName',
-            type: 'string',
-            default: '',
-            placeholder: 'Max Mustermann',
-            description: 'Companies connected to a person by name',
-            routing: { request: { qs: { person_name: '={{$value || undefined}}' } } },
-          },
-          {
-            displayName: 'Register Number',
-            name: 'registerNumber',
-            type: 'number',
-            default: 0,
-            placeholder: '123456',
-            description: 'Exact register number, e.g. 123456 for HRB 123456',
-            routing: { request: { qs: { register_number: '={{$value || undefined}}' } } },
-          },
-          {
-            displayName: 'Register Type',
-            name: 'registerType',
-            type: 'options',
-            default: 'HRB',
-            options: [
-              { name: 'GnR', value: 'GnR' },
-              { name: 'GsR', value: 'GsR' },
-              { name: 'HRA', value: 'HRA' },
-              { name: 'HRB', value: 'HRB' },
-              { name: 'PR', value: 'PR' },
-              { name: 'VR', value: 'VR' },
-            ],
-            routing: { request: { qs: { register_type: '={{$value || undefined}}' } } },
-          },
-        ],
+        // Generated from contracts/openapi.v1.json — every search filter the
+        // API exposes, with real pickers for the enum-backed ones. Regenerate
+        // with `npm run generate`; `npm run generate -- --check` fails CI when
+        // the contract has moved and this file has not.
+        options: searchFilters,
       },
     ],
   };

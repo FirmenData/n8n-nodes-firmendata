@@ -23,7 +23,7 @@ and enter `n8n-nodes-firmendata` as the npm package name.
 | Operation | What it returns |
 |---|---|
 | **Autocomplete** | Company-name suggestions for a fragment. Costs no credits. |
-| **Search** | The commercial register, filtered by city, state, legal form, legal status, revenue, employees, register number, connected person and more. Cursor-paginated. |
+| **Search** | The commercial register, across 30 filters — legal form, legal status, register court, federal state, city, industry, revenue, balance-sheet total, employees, founding date, public-procurement role and more, with dropdowns wherever the API has a fixed set of values. Cursor-paginated. |
 | **Get** | Full profile for one company |
 | **Get Financials** | Multi-year financial statements, parsed into figures rather than PDFs |
 | **Get Shareholders** | Cap table from the most recent Gesellschafterliste (GmbH/UG) |
@@ -41,10 +41,16 @@ directly.
 Search → iterate hits → Get UBO for each, for a KYC or onboarding check:
 
 ```
-Search (legal_status: insolvent, revenue_min: 1000000)
+Search (Legal Status: Insolvent, Total Assets Min: 1000000)
   → Loop Over Items
     → FirmenData: Get UBO  (Company ID = {{ $json.eu_id }})
 ```
+
+> **Filtering on company size?** Use **Total Assets**, not Revenue. Small and
+> medium-sized German companies file abridged accounts — a balance sheet, but
+> no profit-and-loss statement and no headcount. So a revenue or employee
+> filter silently narrows your results to the minority that publish a full
+> P&L, while the balance-sheet total is available for every filing company.
 
 ## Credentials
 
@@ -79,10 +85,23 @@ execute them, rather than shipping an HTTP client of its own.
 
 ```bash
 npm install
-npm run dev     # starts n8n with this node loaded
-npm run lint    # enforces much of n8n's verification checklist
+npm run dev       # starts n8n with this node loaded
+npm run generate  # regenerate the search filters from contracts/openapi.v1.json
+npm run lint      # enforces much of n8n's verification checklist
+npm test          # the exact ESLint gate the submission scanner applies
 npm run build
 ```
+
+The Search operation's filters are **generated**, not hand-written:
+`contracts/openapi.v1.json` (the same contract the `firmendata` npm and PyPI
+SDKs generate their types from) is the input, and
+`nodes/FirmenData/searchFilters.ts` is the output. Names, descriptions,
+dropdown options and numeric bounds all come from the spec, so the node cannot
+drift from the API the way it did when this list was maintained by hand.
+
+To pick up an API change: copy the new contract in and run `npm run generate`.
+Both `npm test` and `npm run build` re-run it with `--check` and fail if the
+committed file is stale.
 
 ## License
 
