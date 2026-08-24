@@ -5,7 +5,7 @@
  * contract the firmendata TypeScript and Python SDKs generate their types
  * from. Edit the API, re-export the contract, re-run the generator.
  *
- * 30 filters, covering every query parameter of
+ * 33 filters, covering every query parameter of
  * GET /v1/companies/search except `q` and `limit`, which the node exposes as
  * top-level fields.
  */
@@ -57,6 +57,14 @@ export const searchFilters: INodeProperties[] = [
     routing: { request: { qs: { employee_count_min: '={{$value || undefined}}' } } },
   },
   {
+    displayName: 'Family Managed',
+    name: 'familyManaged',
+    type: 'boolean',
+    default: false,
+    description: 'Whether to restrict to companies where two or more members of one family hold an ownership or governing role (true), or where the people on record are unrelated (false)',
+    routing: { request: { qs: { family_managed: '={{$value || undefined}}' } } },
+  },
+  {
     displayName: 'Federal State',
     name: 'bundesland',
     type: 'multiOptions',
@@ -105,6 +113,14 @@ export const searchFilters: INodeProperties[] = [
     default: '',
     description: 'Latest founding date (inclusive, YYYY-MM-DD)',
     routing: { request: { qs: { founded_to: '={{$value || undefined}}' } } },
+  },
+  {
+    displayName: 'Founder Led',
+    name: 'founderLed',
+    type: 'boolean',
+    default: false,
+    description: 'Whether to restrict to companies where a person holding an ownership or governing role at first registration is still in office (true), or where the founding officers have all been replaced (false)',
+    routing: { request: { qs: { founder_led: '={{$value || undefined}}' } } },
   },
   {
     displayName: 'Has Email',
@@ -475,6 +491,14 @@ export const searchFilters: INodeProperties[] = [
       { name: 'Desc', value: 'desc' },
     ],
     routing: { request: { qs: { sort_direction: '={{$value || undefined}}' } } },
+  },
+  {
+    displayName: 'Succession Risk',
+    name: 'successionRisk',
+    type: 'boolean',
+    default: false,
+    description: 'Whether to restrict to founder-led companies whose oldest serving founder has reached 65 (true), or has not (false)',
+    routing: { request: { qs: { succession_risk: '={{$value || undefined}}' } } },
   },
   {
     displayName: 'Tender Role',
