@@ -5,7 +5,7 @@
  * contract the firmendata TypeScript and Python SDKs generate their types
  * from. Edit the API, re-export the contract, re-run the generator.
  *
- * 33 filters, covering every query parameter of
+ * 34 filters, covering every query parameter of
  * GET /v1/companies/search except `q` and `limit`, which the node exposes as
  * top-level fields.
  */
@@ -29,6 +29,18 @@ export const searchFilters: INodeProperties[] = [
     default: '',
     description: 'Company name prefix. The legal-form suffix counts, so "Bosch GmbH" narrows against "Bosch".',
     routing: { request: { qs: { company_name: '={{$value || undefined}}' } } },
+  },
+  {
+    displayName: 'Company Size',
+    name: 'companySize',
+    type: 'multiOptions',
+    default: [],
+    options: [
+      { name: 'Medium-Sized (Mittelgroße Kapitalgesellschaft, § 267 (2) HGB)', value: 'mittelgross' },
+      { name: 'Small (Kleine Kapitalgesellschaft, § 267 (1) HGB)', value: 'klein' },
+    ],
+    description: 'Statutory size class under § 267 HGB',
+    routing: { request: { qs: { company_size: '={{$value?.length ? $value.join(",") : undefined}}' } } },
   },
   {
     displayName: 'Cursor',
@@ -441,6 +453,7 @@ export const searchFilters: INodeProperties[] = [
     type: 'options',
     default: 'HRB',
     options: [
+      { name: 'CH-HR', value: 'CH-HR' },
       { name: 'GnR', value: 'GnR' },
       { name: 'GsR', value: 'GsR' },
       { name: 'HRA', value: 'HRA' },
