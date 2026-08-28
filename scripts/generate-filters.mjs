@@ -123,6 +123,23 @@ const DEFAULT_VALUE = {
   register_court: 'Berlin (Charlottenburg)',  // the largest register court
 };
 
+// Dropdown labels where title-casing the API value produces something a
+// workflow builder cannot act on. The value sent is unchanged — this only
+// renames the entry in the side panel.
+//
+// German enum values are usually fine as labels because they are proper nouns
+// somebody would recognise or search for (`Steuerberaterkammer`, `GmbH`). The
+// § 267 size classes are not: they are ordinary German adjectives, and `Klein`
+// / `Mittelgross` in an English side panel reads as a typo rather than as a
+// statutory category. The paragraph reference is what makes the choice
+// checkable by someone who does know the law.
+const OPTION_LABEL = {
+  company_size: {
+    klein: 'Small (Kleine Kapitalgesellschaft, § 267 (1) HGB)',
+    mittelgross: 'Medium-Sized (Mittelgroße Kapitalgesellschaft, § 267 (2) HGB)',
+  },
+};
+
 const SNAKE_CASE = /^[a-z0-9]+(_[a-z0-9]+)+$/;
 
 const spec = JSON.parse(readFileSync(SPEC, 'utf8'));
@@ -173,7 +190,9 @@ function fieldName(name) {
 }
 
 /** Enum value -> the label shown in the dropdown. */
-function optionName(value) {
+function optionName(value, paramName) {
+  const override = OPTION_LABEL[paramName]?.[value];
+  if (override) return override;
   return titleCase(SNAKE_CASE.test(value) ? value.split('_').join(' ') : value);
 }
 
@@ -247,7 +266,7 @@ function buildField(param) {
   if (info.enum) {
     // n8n's linter enforces alphabetical option ordering by name.
     const options = info.enum
-      .map((value) => ({ name: optionName(value), value }))
+      .map((value) => ({ name: optionName(value, param.name), value }))
       .sort((a, b) => a.name.localeCompare(b.name, 'en'));
     lines.push(`    type: '${info.isList ? 'multiOptions' : 'options'}',`);
     // `node-param-default-wrong-for-options`: a single-select must default to
