@@ -23,9 +23,9 @@ and enter `n8n-nodes-firmendata` as the npm package name.
 | Operation | What it returns |
 |---|---|
 | **Autocomplete** | Company-name suggestions for a fragment. Costs no credits. |
-| **Search** | The commercial register, across 30 filters — legal form, legal status, register court, federal state, city, industry, revenue, balance-sheet total, employees, founding date, public-procurement role and more, with dropdowns wherever the API has a fixed set of values. Cursor-paginated. |
+| **Search** | The commercial register, across 34 filters — legal form, legal status, register court, federal state, city, industry, revenue, balance-sheet total, employees, founding date, public-procurement role and more, with dropdowns wherever the API has a fixed set of values. Cursor-paginated. |
 | **Get** | Full profile for one company |
-| **Get Financials** | Multi-year financial statements, parsed into figures rather than PDFs |
+| **Get Financials** | Multi-year financial statements, parsed into figures rather than PDFs. Lean by default — switch on *Include Line Items* for the rows as filed, and set *Years* to shorten the history |
 | **Get Shareholders** | Cap table from the most recent Gesellschafterliste (GmbH/UG) |
 | **Get UBO** | Ultimate beneficial owners, resolved through ownership chains |
 | **Get History** | Chronological register history |

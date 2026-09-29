@@ -191,6 +191,31 @@ export class FirmenData implements INodeType {
       },
 
       // ---------------------------------------------------------------
+      // Get Financials — lean by default since API 1.1.0
+      // ---------------------------------------------------------------
+      {
+        displayName: 'Include Line Items',
+        name: 'includeLineItems',
+        type: 'boolean',
+        default: false,
+        description:
+          'Whether to include the structured profit-and-loss and balance-sheet rows as filed. They make the response many times larger.',
+        displayOptions: { show: { resource: ['company'], operation: ['financials'] } },
+        routing: { request: { qs: { include: '={{ $value ? "line_items" : undefined }}' } } },
+      },
+      {
+        displayName: 'Years',
+        name: 'years',
+        type: 'number',
+        typeOptions: { minValue: 0 },
+        default: 0,
+        description:
+          'Keep only the most recent N fiscal years in each series. 0 returns the full history.',
+        displayOptions: { show: { resource: ['company'], operation: ['financials'] } },
+        routing: { request: { qs: { years: '={{ $value || undefined }}' } } },
+      },
+
+      // ---------------------------------------------------------------
       // Search
       // ---------------------------------------------------------------
       {
