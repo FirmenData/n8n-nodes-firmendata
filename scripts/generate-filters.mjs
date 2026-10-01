@@ -71,6 +71,8 @@ const SKIP = new Map([
 // sheet but no P&L and no headcount, which is why revenue and employees are
 // scarce and the balance-sheet total is not.
 const DESCRIPTION_OVERRIDE = {
+  canton: 'Swiss address canton codes. Multiple selections are OR-merged with Federal State.',
+  rechtsform: 'Legal form in the German or Swiss company register; select several to match any',
   revenue_min:
     'Minimum reported revenue in EUR. Most German companies file abridged accounts with no profit-and-loss statement, so revenue is the scarcest figure — use Total Assets Min to filter on size instead',
   revenue_max: 'Maximum reported revenue in EUR. Filed by a minority of companies — see Revenue Min',
@@ -117,6 +119,7 @@ const DISPLAY_NAME = {
 // API's default nor its indexed fast path, since every ordering index is
 // DESC NULLS LAST and an ascending sort over the whole register takes seconds.
 const DEFAULT_VALUE = {
+  country: 'DE',
   sort: 'revenue',
   sort_direction: 'desc',
   register_type: 'HRB',                       // the most common register type

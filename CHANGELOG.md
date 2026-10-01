@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.2.0
+
+Regenerated from API contract 1.2.0. **Additive, non-breaking changes:**
+
+- Get, Search and Autocomplete: required `country_code` (`DE` or `CH`) in
+  company profiles and hits, also present on list rows.
+- Search: **Country** and multi-select **Canton** filters; cantons are
+  OR-merged with **Federal State**. **Legal Form** includes Swiss forms such
+  as `AG (CH)` and `GmbH (CH)`. Hits include `registered_seat`; sorting by
+  name now defaults to ascending.
+- List Documents: new live registry check listing available documents,
+  including older versions, with labels, dates, stored-copy metadata,
+  coverage, freshness and `country_code`. Costs 5 credits; Swiss, empty and
+  registry-unreachable responses cost no credits.
+- Download Document: exposed as a Company operation, with optional
+  **Document ID** from List Documents to select a specific version.
+  **File Type** remains required and must match; **Document ID** cannot be
+  combined with **File ID** or **Fetch Realtime**. Responses include
+  `document_id` and `label`.
+
 ## 1.0.0
 
 Regenerated from API contract 1.1.0, which renames and reshapes response
