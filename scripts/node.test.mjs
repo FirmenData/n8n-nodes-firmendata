@@ -169,6 +169,29 @@ test('generated Country and Canton pickers include all contract enum values', ()
   assert.deepEqual(filters.find((p) => p.name === 'canton').default, []);
 });
 
+test('generated Company Size picker offers micro, small and medium statutory classes', () => {
+  const filter = filters.find((p) => p.name === 'companySize');
+  assert.equal(filter.type, 'multiOptions');
+  assert.deepEqual(filter.default, []);
+  assert.deepEqual(filter.options.map((o) => o.value).sort(), ['klein', 'kleinst', 'mittelgross']);
+  assert.deepEqual(filter.options.map((o) => o.value).sort(), [...contract.components.schemas.CompanySize.enum].sort());
+  assert.equal(filter.options.find((o) => o.value === 'kleinst').name,
+    'Micro (Kleinstkapitalgesellschaft, § 267a HGB)');
+  assert.equal(filter.description, 'Statutory size class under § 267 / § 267a HGB');
+});
+
+test('Search sends canonical company sizes and omits empty selections', async () => {
+  for (const [sizes, qs] of [
+    [['kleinst'], { company_size: 'kleinst' }],
+    [['kleinst', 'klein', 'mittelgross'], { company_size: 'kleinst,klein,mittelgross' }],
+    [[], {}],
+  ]) {
+    const http = mock.fn(async () => ({ data: [] }));
+    await request({ operation: 'search', filters: { companySize: sizes } }, http);
+    assert.deepEqual(http.mock.calls[0].arguments[0].qs, { limit: 50, ...qs });
+  }
+});
+
 test('Search sends country, comma-joined cantons, federal states and Swiss legal forms', async () => {
   const http = mock.fn(async () => ({ data: [] }));
   await request({ operation: 'search', filters: {

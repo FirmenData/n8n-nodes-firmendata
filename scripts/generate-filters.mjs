@@ -132,12 +132,13 @@ const DEFAULT_VALUE = {
 //
 // German enum values are usually fine as labels because they are proper nouns
 // somebody would recognise or search for (`Steuerberaterkammer`, `GmbH`). The
-// § 267 size classes are not: they are ordinary German adjectives, and `Klein`
-// / `Mittelgross` in an English side panel reads as a typo rather than as a
-// statutory category. The paragraph reference is what makes the choice
-// checkable by someone who does know the law.
+// § 267 / § 267a size classes are not: they are ordinary German adjectives,
+// and `Kleinst` / `Klein` / `Mittelgross` in an English side panel reads as a
+// typo rather than as a statutory category. The paragraph reference is what
+// makes the choice checkable by someone who does know the law.
 const OPTION_LABEL = {
   company_size: {
+    kleinst: 'Micro (Kleinstkapitalgesellschaft, § 267a HGB)',
     klein: 'Small (Kleine Kapitalgesellschaft, § 267 (1) HGB)',
     mittelgross: 'Medium-Sized (Mittelgroße Kapitalgesellschaft, § 267 (2) HGB)',
   },

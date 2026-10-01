@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.1
+
+Regenerated from the updated API contract. **Additive, non-breaking change:**
+
+- Search: **Company Size** now includes **Micro** (`kleinst`,
+  Kleinstkapitalgesellschaft under § 267a HGB), alongside Small (`klein`)
+  and Medium-Sized (`mittelgross`). The filter description now references
+  § 267 / § 267a HGB.
+
 ## 1.2.0
 
 Regenerated from API contract 1.2.0. **Additive, non-breaking changes:**
