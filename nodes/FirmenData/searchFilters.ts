@@ -73,9 +73,10 @@ export const searchFilters: INodeProperties[] = [
     default: [],
     options: [
       { name: 'Medium-Sized (Mittelgroße Kapitalgesellschaft, § 267 (2) HGB)', value: 'mittelgross' },
+      { name: 'Micro (Kleinstkapitalgesellschaft, § 267a HGB)', value: 'kleinst' },
       { name: 'Small (Kleine Kapitalgesellschaft, § 267 (1) HGB)', value: 'klein' },
     ],
-    description: 'Statutory size class under § 267 HGB',
+    description: 'Statutory size class under § 267 / § 267a HGB',
     routing: { request: { qs: { company_size: '={{$value?.length ? $value.join(",") : undefined}}' } } },
   },
   {

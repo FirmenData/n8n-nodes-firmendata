@@ -40,6 +40,9 @@ Sorting by **Name** defaults to ascending unless **Sort Direction** is set.
 Company profiles, search hits and autocomplete hits include `country_code`
 (`DE` or `CH`); search hits also include `registered_seat`.
 
+**Company Size** accepts multiple selections: Micro (`kleinst`, § 267a HGB),
+Small (`klein`, § 267 (1) HGB) and Medium-Sized (`mittelgross`, § 267 (2) HGB).
+
 For a specific document version, pass its `document_id` from List Documents
 and select the matching **File Type**. **Document ID** cannot be combined with
 **File ID** or **Fetch Realtime**. Register extracts have no `document_id`;
