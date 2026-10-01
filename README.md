@@ -1,8 +1,8 @@
 # n8n-nodes-firmendata
 
 An [n8n](https://n8n.io) community node for [firmendata](https://firmendata.com) —
-data on **2.4 million German companies** from the Unternehmensregister and
-Handelsregister: register profiles, parsed annual financial statements,
+German and Swiss company data from the Unternehmensregister, Handelsregister
+and Swiss commercial register: register profiles, parsed annual financial statements,
 shareholder cap tables, UBO chains and register history.
 
 [![npm](https://img.shields.io/npm/v/n8n-nodes-firmendata)](https://www.npmjs.com/package/n8n-nodes-firmendata)
@@ -23,15 +23,28 @@ and enter `n8n-nodes-firmendata` as the npm package name.
 | Operation | What it returns |
 |---|---|
 | **Autocomplete** | Company-name suggestions for a fragment. Costs no credits. |
-| **Search** | The commercial register, across 34 filters — legal form, legal status, register court, federal state, city, industry, revenue, balance-sheet total, employees, founding date, public-procurement role and more, with dropdowns wherever the API has a fixed set of values. Cursor-paginated. |
+| **Search** | Company registers, with filters for country (DE or CH), Swiss canton, German and Swiss legal forms, legal status, register court, federal state, city, industry, revenue, balance-sheet total, employees, founding date, public-procurement role and more. Dropdowns wherever the API has a fixed set of values. Cursor-paginated. |
 | **Get** | Full profile for one company |
 | **Get Financials** | Multi-year financial statements, parsed into figures rather than PDFs. Lean by default — switch on *Include Line Items* for the rows as filed, and set *Years* to shorten the history |
 | **Get Shareholders** | Cap table from the most recent Gesellschafterliste (GmbH/UG) |
 | **Get UBO** | Ultimate beneficial owners, resolved through ownership chains |
 | **Get History** | Chronological register history |
+| **List Documents** | Live registry check returning available documents, including older versions, with labels, dates, stored-copy status, coverage and freshness. Costs 5 credits; Swiss, empty and registry-unreachable responses cost no credits. |
+| **Download Document** | A download URL and document metadata. Select **File Type** and optionally a **Document ID** from List Documents; leave it empty for the latest version. |
 
-Every operation after Autocomplete takes a **Company ID (`eu_id`)**, which
+All Get operations, List Documents and Download Document take a **Company ID (`eu_id`)**, which
 Search and Autocomplete return on each hit.
+
+**Canton** accepts multiple selections and is OR-merged with **Federal State**.
+Sorting by **Name** defaults to ascending unless **Sort Direction** is set.
+Company profiles, search hits and autocomplete hits include `country_code`
+(`DE` or `CH`); search hits also include `registered_seat`.
+
+For a specific document version, pass its `document_id` from List Documents
+and select the matching **File Type**. **Document ID** cannot be combined with
+**File ID** or **Fetch Realtime**. Register extracts have no `document_id`;
+download them by **File Type**. The download response includes `document_id`
+and `label`.
 
 The node is also usable as an **AI tool**, so an agent can look companies up
 directly.
@@ -88,7 +101,7 @@ npm install
 npm run dev       # starts n8n with this node loaded
 npm run generate  # regenerate the search filters from contracts/openapi.v1.json
 npm run lint      # enforces much of n8n's verification checklist
-npm test          # the exact ESLint gate the submission scanner applies
+npm test          # routing unit tests and the submission scanner's ESLint gate
 npm run build
 ```
 

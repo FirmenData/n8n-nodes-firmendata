@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-firmendata",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "n8n node for firmendata — German company data: register profiles, financials, shareholders and UBO",
   "license": "MIT",
   "homepage": "https://firmendata.com",
@@ -37,7 +37,7 @@
     "dev": "n8n-node dev",
     "lint": "n8n-node lint",
     "lint:fix": "n8n-node lint --fix",
-    "test": "npm run generate -- --check && node scripts/scan-check.mjs",
+    "test": "npm run generate -- --check && node scripts/node.test.mjs && node scripts/scan-check.mjs",
     "release": "n8n-node release",
     "prepublishOnly": "n8n-node prerelease"
   },

@@ -4,7 +4,7 @@ import { NodeConnectionTypes } from 'n8n-workflow';
 import { searchFilters } from './searchFilters';
 
 /**
- * FirmenData node — German company data.
+ * FirmenData node — German and Swiss company data.
  *
  * Written in n8n's **declarative** style: each operation describes the HTTP
  * request it makes via `routing`, and n8n's own request helper executes it.
@@ -34,7 +34,7 @@ export class FirmenData implements INodeType {
     version: 1,
     subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
     description:
-      'Look up German company data: register profiles, financials, shareholders and UBO',
+      'Look up German and Swiss company data: register profiles, financials, shareholders and UBO',
     defaults: { name: 'FirmenData' },
     inputs: [NodeConnectionTypes.Main],
     outputs: [NodeConnectionTypes.Main],
@@ -85,6 +85,18 @@ export class FirmenData implements INodeType {
             routing: { request: { method: 'GET', url: '/v1/companies/autocomplete' } },
           },
           {
+            name: 'Download Document',
+            value: 'downloadDocument',
+            action: 'Download a company document',
+            description: 'Get a download URL and metadata for a register document',
+            routing: {
+              request: {
+                method: 'GET',
+                url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/documents/download',
+              },
+            },
+          },
+          {
             name: 'Get',
             value: 'get',
             action: 'Get a company',
@@ -133,10 +145,22 @@ export class FirmenData implements INodeType {
             },
           },
           {
+            name: 'List Documents',
+            value: 'listDocuments',
+            action: 'List company documents',
+            description: 'Check the registry live for available documents, including older versions',
+            routing: {
+              request: {
+                method: 'GET',
+                url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/documents',
+              },
+            },
+          },
+          {
             name: 'Search',
             value: 'search',
             action: 'Search companies',
-            description: 'Search the German commercial register with filters',
+            description: 'Search the German and Swiss company registers with filters',
             routing: { request: { method: 'GET', url: '/v1/companies/search' } },
           },
         ],
@@ -185,7 +209,7 @@ export class FirmenData implements INodeType {
         displayOptions: {
           show: {
             resource: ['company'],
-            operation: ['get', 'financials', 'shareholders', 'ubo', 'history'],
+            operation: ['get', 'financials', 'shareholders', 'ubo', 'history', 'listDocuments', 'downloadDocument'],
           },
         },
       },
@@ -213,6 +237,58 @@ export class FirmenData implements INodeType {
           'Keep only the most recent N fiscal years in each series. 0 returns the full history.',
         displayOptions: { show: { resource: ['company'], operation: ['financials'] } },
         routing: { request: { qs: { years: '={{ $value || undefined }}' } } },
+      },
+
+      // ---------------------------------------------------------------
+      // Download Document
+      // ---------------------------------------------------------------
+      {
+        displayName: 'File Type',
+        name: 'fileType',
+        type: 'options',
+        required: true,
+        default: 'register_extract_current',
+        options: [
+          { name: 'Articles of Association', value: 'articles_of_association' },
+          { name: 'Company Registration', value: 'company_registration' },
+          { name: 'Model Protocol', value: 'model_protocol' },
+          { name: 'Register Extract (Chronological)', value: 'register_extract_chronological' },
+          { name: 'Register Extract (Current)', value: 'register_extract_current' },
+          { name: 'Shareholder List', value: 'shareholder_list' },
+        ],
+        description: 'Document type to download; must match the selected Document ID',
+        displayOptions: { show: { resource: ['company'], operation: ['downloadDocument'] } },
+        routing: { request: { qs: { file_type: '={{$value}}' } } },
+      },
+      {
+        displayName: 'Document ID',
+        name: 'documentId',
+        type: 'string',
+        default: '',
+        placeholder: 'doc_12345',
+        description: 'Document ID from List Documents; leave empty for the latest version',
+        displayOptions: { show: { resource: ['company'], operation: ['downloadDocument'] } },
+        routing: { request: { qs: { document_id: '={{$value || undefined}}' } } },
+      },
+      {
+        displayName: 'File ID',
+        name: 'fileId',
+        type: 'string',
+        default: '',
+        placeholder: 'file_12345',
+        description: 'Stored file identifier from the company detail; cannot be combined with Document ID',
+        displayOptions: { show: { resource: ['company'], operation: ['downloadDocument'] } },
+        routing: { request: { qs: { file_id: '={{$value || undefined}}' } } },
+      },
+      {
+        displayName: 'Fetch Realtime',
+        name: 'fetchRealtime',
+        type: 'boolean',
+        default: false,
+        description:
+          'Whether to fetch a fresh document from the German registries before resolving the download URL. Cannot be combined with Document ID.',
+        displayOptions: { show: { resource: ['company'], operation: ['downloadDocument'] } },
+        routing: { request: { qs: { fetch_realtime: '={{$value || undefined}}' } } },
       },
 
       // ---------------------------------------------------------------
