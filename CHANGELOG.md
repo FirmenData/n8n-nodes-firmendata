@@ -5,8 +5,10 @@
 - Autocomplete: optional **Country** picker (All, DE, CH or AT).
 - New **FirmenData Trigger** polling node for the Beta **New Company** and
   **Insolvency Notice** feeds, reusing FirmenData API credentials. Includes
-  country, federal state/canton, legal form and industry filters, plus notice
-  category for insolvencies.
+  country, federal state/canton, register court, legal form and industry
+  filters, plus notice category for insolvencies. Register Court is a
+  multi-select of German and Austrian register courts; on insolvencies it is
+  the company's register court, not the insolvency court.
 - Polling starts from now, persists opaque cursors even after empty pages,
   follows up to 10 pages per poll and deduplicates the most recent 10,000 event
   IDs across polls. A failed page leaves the cursor available for retry.

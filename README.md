@@ -75,13 +75,18 @@ choose an **Event** and set n8n's **Poll Times** schedule.
 
 | Event | Feed | Filters |
 |---|---|---|
-| **New Company** | `/v1/feeds/new-companies` | Country (All, DE, CH or AT), Federal State, Canton, Legal Form, Industry |
-| **Insolvency Notice** | `/v1/feeds/insolvencies` | Country (DE by default, CH or AT), Federal State, Canton, Legal Form, Industry, Category |
+| **New Company** | `/v1/feeds/new-companies` | Country (All, DE, CH or AT), Federal State, Canton, Register Court, Legal Form, Industry |
+| **Insolvency Notice** | `/v1/feeds/insolvencies` | Country (DE by default, CH or AT), Federal State, Canton, Register Court, Legal Form, Industry, Category |
 
 The first poll starts from the current time (`since`) to avoid a historical
 backlog. Changing the event or filters starts a new stream from now. Subsequent
 polls persist `next_cursor` in node static data and send it back unchanged,
 including after empty pages. Events are released after a settlement delay.
+
+**Register Court** selects German Registergericht or Austrian Firmenbuch courts
+(the same list as Search); several selections match any of them. Swiss
+companies are selected with **Canton**. On the insolvency feed it is the
+company's register court, not the insolvency court.
 
 **Limit** controls the page size (1–100, default 50). When `has_more` is true,
 the trigger requests the next page immediately, up to 10 pages per poll; any

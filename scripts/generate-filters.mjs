@@ -386,7 +386,14 @@ ${fields.map((f) => f.source).join('\n')}
 // The trigger exposes the main feed filters, not the insolvency endpoint's
 // optional revenue bounds. Keep search SKIP decisions above unchanged; feed
 // pickers use their own endpoint descriptions and have no declarative routing.
-const FEED_FILTERS = new Set(['bundesland', 'canton', 'rechtsform', 'industry_slug', 'category']);
+const FEED_FILTERS = new Set([
+  'bundesland',
+  'canton',
+  'register_court',
+  'rechtsform',
+  'industry_slug',
+  'category',
+]);
 const feedCountries = [
   ['newCompanyCountry', '/v1/feeds/new-companies', true],
   ['insolvencyCountry', '/v1/feeds/insolvencies', false],

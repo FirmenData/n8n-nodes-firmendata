@@ -104,17 +104,21 @@ test('filters use canonical query names and empty values are omitted for both fe
     const h = harness({ event: selectedEvent, country: 'CH', filters: {
       bundesland: ['Berlin'], canton: ['ZH', 'GE'], rechtsform: ['AG (CH)'],
       industrySlug: ['it'], category: ['Schuldenruf'],
+      registerCourt: ['München', 'Berlin (Charlottenburg)'],
     } });
     await h.poll();
     const options = h.http.mock.calls[0].arguments[1];
     assert.equal(options.url, `https://api.firmendata.com/v1/feeds/${selectedEvent === 'newCompany' ? 'new-companies' : 'insolvencies'}`);
     assert.deepEqual(options.qs, {
       country: 'CH', bundesland: 'Berlin', canton: 'GE,ZH', rechtsform: 'AG (CH)',
-      industry_slug: 'it', ...(selectedEvent === 'insolvencyNotice' ? { category: 'Schuldenruf' } : {}),
+      industry_slug: 'it', register_court: 'Berlin (Charlottenburg),München',
+      ...(selectedEvent === 'insolvencyNotice' ? { category: 'Schuldenruf' } : {}),
       limit: 50, since: h.state.since,
     });
   }
-  const h = harness({ event: 'insolvencyNotice', filters: { canton: [], category: [], industrySlug: [] } });
+  const h = harness({ event: 'insolvencyNotice', filters: {
+    canton: [], category: [], industrySlug: [], registerCourt: [],
+  } });
   await h.poll();
   assert.deepEqual(h.http.mock.calls[0].arguments[1].qs, { country: 'DE', limit: 50, since: h.state.since });
 });
@@ -212,5 +216,6 @@ test('generated feed pickers match each endpoint enum and category is insolvency
       assert.deepEqual(field.options.map((o) => o.value).sort(), [...resolve(resolve(param.schema).items).enum].sort());
     }
     assert.equal(filters.some((p) => p.name === 'category'), selectedEvent === 'insolvencyNotice');
+    assert.ok(filters.some((p) => p.name === 'registerCourt' && p.type === 'multiOptions'));
   }
 });

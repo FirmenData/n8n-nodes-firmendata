@@ -106,6 +106,7 @@ export class FirmenDataTrigger implements INodeType {
       ['canton', 'canton'],
       ['industrySlug', 'industry_slug'],
       ['rechtsform', 'rechtsform'],
+      ['registerCourt', 'register_court'],
       ...(event === 'insolvencyNotice' ? [['category', 'category']] : []),
     ]) {
       const values = filters[field];
