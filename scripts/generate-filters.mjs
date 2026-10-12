@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generate `nodes/FirmenData/searchFilters.ts` from `contracts/openapi.v1.json`.
+ * Generate search and trigger filters from `contracts/openapi.v1.json`.
  *
  *   npm run generate          # write
  *   npm run generate -- --check   # exit 1 if the committed file is stale
@@ -29,7 +29,7 @@
  * (`rechtsform` -> "Legal Form", not "Rechtsform").
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -72,7 +72,7 @@ const SKIP = new Map([
 // scarce and the balance-sheet total is not.
 const DESCRIPTION_OVERRIDE = {
   canton: 'Swiss address canton codes. Multiple selections are OR-merged with Federal State.',
-  rechtsform: 'Legal form in the German or Swiss company register; select several to match any',
+  rechtsform: 'Legal form in the German, Swiss or Austrian company register; select several to match any',
   revenue_min:
     'Minimum reported revenue in EUR. Most German companies file abridged accounts with no profit-and-loss statement, so revenue is the scarcest figure — use Total Assets Min to filter on size instead',
   revenue_max: 'Maximum reported revenue in EUR. Filed by a minority of companies — see Revenue Min',
@@ -252,10 +252,10 @@ function jsString(value) {
   return `'${String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }
 
-function buildField(param) {
+function buildField(param, { routing = true, useOverrides = true, allowAll = false } = {}) {
   const info = describe(param.schema);
   const display = DISPLAY_NAME[param.name] ?? fieldName(param.name);
-  let description = DESCRIPTION_OVERRIDE[param.name]
+  let description = useOverrides && DESCRIPTION_OVERRIDE[param.name]
     ? shortDescription(DESCRIPTION_OVERRIDE[param.name], info.type === 'boolean', true)
     : shortDescription(param.description, info.type === 'boolean');
   // `node-param-description-identical-to-display-name`: a description that
@@ -272,12 +272,13 @@ function buildField(param) {
     const options = info.enum
       .map((value) => ({ name: optionName(value, param.name), value }))
       .sort((a, b) => a.name.localeCompare(b.name, 'en'));
+    if (allowAll) options.unshift({ name: 'All', value: '' });
     lines.push(`    type: '${info.isList ? 'multiOptions' : 'options'}',`);
     // `node-param-default-wrong-for-options`: a single-select must default to
     // one of its own values. See DEFAULT_VALUE for why that is not simply the
     // first option.
-    const fallback = DEFAULT_VALUE[param.name] ?? options[0].value;
-    if (!info.isList && !info.enum.includes(fallback)) {
+    const fallback = allowAll ? '' : DEFAULT_VALUE[param.name] ?? options[0].value;
+    if (!info.isList && !options.some((o) => o.value === fallback)) {
       // A DEFAULT_VALUE that no longer exists would otherwise ship a field
       // that sends a value the API rejects.
       throw new Error(
@@ -313,7 +314,9 @@ function buildField(param) {
   }
 
   if (description) lines.push(`    description: ${jsString(description)},`);
-  lines.push(`    routing: { request: { qs: { ${jsonKey(param.name)}: ${routingValue(info)} } } },`);
+  if (routing) {
+    lines.push(`    routing: { request: { qs: { ${jsonKey(param.name)}: ${routingValue(info)} } } },`);
+  }
   lines.push('  },');
   return { display, source: lines.join('\n') };
 }
@@ -357,7 +360,7 @@ function camel(name) {
 
 const fields = params
   .filter((p) => p.in === 'query' && !SKIP.has(p.name))
-  .map(buildField)
+  .map((p) => buildField(p))
   // n8n's linter: collection options must be alphabetical by displayName.
   .sort((a, b) => a.display.localeCompare(b.display, 'en'));
 
@@ -380,20 +383,63 @@ ${fields.map((f) => f.source).join('\n')}
 ];
 `;
 
-const check = process.argv.includes('--check');
-if (check) {
-  let current = '';
-  try {
-    current = readFileSync(OUT, 'utf8');
-  } catch {
-    /* missing counts as stale */
+// The trigger exposes the main feed filters, not the insolvency endpoint's
+// optional revenue bounds. Keep search SKIP decisions above unchanged; feed
+// pickers use their own endpoint descriptions and have no declarative routing.
+const FEED_FILTERS = new Set(['bundesland', 'canton', 'rechtsform', 'industry_slug', 'category']);
+const feedCountries = [
+  ['newCompanyCountry', '/v1/feeds/new-companies', true],
+  ['insolvencyCountry', '/v1/feeds/insolvencies', false],
+].map(([name, path, allowAll]) => {
+  const param = spec.paths[path].get.parameters.find((p) => p.name === 'country');
+  const source = buildField(param, { routing: false, useOverrides: false, allowAll }).source
+    .replace(/,\s*$/, '').trim();
+  return `export const ${name}: INodeProperties = ${source};`;
+});
+const feedArrays = [
+  ['newCompanyFilters', '/v1/feeds/new-companies'],
+  ['insolvencyFilters', '/v1/feeds/insolvencies'],
+].map(([name, path]) => {
+  const entries = spec.paths[path].get.parameters
+    .filter((p) => p.in === 'query' && FEED_FILTERS.has(p.name))
+    .map((p) => buildField(p, { routing: false, useOverrides: false }))
+    .sort((a, b) => a.display.localeCompare(b.display, 'en'));
+  return `export const ${name}: INodeProperties[] = [\n${entries.map((f) => f.source).join('\n')}\n];`;
+});
+const feedOutput = `/**
+ * GENERATED FILE — do not edit.
+ * Produced by \`npm run generate\` from \`contracts/openapi.v1.json\`.
+ * Main filters for the Beta company event feeds.
+ */
+
+import type { INodeProperties } from 'n8n-workflow';
+
+${feedCountries.join('\n\n')}
+
+${feedArrays.join('\n\n')}
+`;
+
+const outputs = [
+  [OUT, header],
+  [join(ROOT, 'nodes', 'FirmenDataTrigger', 'feedFilters.ts'), feedOutput],
+];
+for (const [path, content] of outputs) {
+  if (process.argv.includes('--check')) {
+    let current = '';
+    try {
+      current = readFileSync(path, 'utf8');
+    } catch {
+      /* missing counts as stale */
+    }
+    if (current !== content) {
+      console.error(`${path} is stale — run \`npm run generate\``);
+      process.exitCode = 1;
+    } else {
+      console.log(`${path} is current`);
+    }
+  } else {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, content);
+    console.log(`wrote ${path}`);
   }
-  if (current !== header) {
-    console.error(`${OUT} is stale — run \`npm run generate\``);
-    process.exit(1);
-  }
-  console.log(`searchFilters.ts is current (${fields.length} filters)`);
-} else {
-  writeFileSync(OUT, header);
-  console.log(`wrote ${OUT} (${fields.length} filters)`);
 }

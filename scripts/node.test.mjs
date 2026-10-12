@@ -77,6 +77,21 @@ test('document operations require Company ID and stay alphabetically ordered', (
   assert.deepEqual(names, [...names].sort((a, b) => a.localeCompare(b, 'en')));
 });
 
+test('Autocomplete defaults to all countries and sends each selected contract country', async () => {
+  const country = properties.find((p) => p.name === 'country');
+  assert.equal(country.default, '');
+  assert.deepEqual(country.options.map((o) => o.value).filter(Boolean).sort(),
+    [...contract.components.schemas.Country.enum].sort());
+  for (const selected of [undefined, '', 'DE', 'CH', 'AT']) {
+    const http = mock.fn(async () => ({ data: [] }));
+    await request({ operation: 'autocomplete', q: 'test', country: selected }, http);
+    assert.deepEqual(http.mock.calls[0].arguments[0], {
+      method: 'GET', url: 'https://api.firmendata.com/v1/companies/autocomplete',
+      qs: { q: 'test', limit: 10, ...(selected ? { country: selected } : {}) },
+    });
+  }
+});
+
 test('List Documents makes an encoded GET without query parameters and preserves the catalog', async () => {
   const response = {
     object: 'company_document_list',

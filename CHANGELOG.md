@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.3.0
+
+- Autocomplete: optional **Country** picker (All, DE, CH or AT).
+- New **FirmenData Trigger** polling node for the Beta **New Company** and
+  **Insolvency Notice** feeds, reusing FirmenData API credentials. Includes
+  country, federal state/canton, legal form and industry filters, plus notice
+  category for insolvencies.
+- Polling starts from now, persists opaque cursors even after empty pages,
+  follows up to 10 pages per poll and deduplicates the most recent 10,000 event
+  IDs across polls. A failed page leaves the cursor available for retry.
+- Regenerated search pickers from the new contract, including Austrian
+  country support, federal states, legal forms and register courts/types.
+
 ## 1.2.1
 
 Regenerated from the updated API contract. **Additive, non-breaking change:**

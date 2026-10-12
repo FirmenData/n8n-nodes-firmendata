@@ -170,6 +170,21 @@ export class FirmenData implements INodeType {
       // Autocomplete
       // ---------------------------------------------------------------
       {
+        displayName: 'Country',
+        name: 'country',
+        type: 'options',
+        default: '',
+        options: [
+          { name: 'All', value: '' },
+          { name: 'AT', value: 'AT' },
+          { name: 'CH', value: 'CH' },
+          { name: 'DE', value: 'DE' },
+        ],
+        description: 'Restrict company-name suggestions to one country',
+        displayOptions: { show: { resource: ['company'], operation: ['autocomplete'] } },
+        routing: { request: { qs: { country: '={{$value || undefined}}' } } },
+      },
+      {
         displayName: 'Query',
         name: 'q',
         type: 'string',
