@@ -232,6 +232,7 @@ export const searchFilters: INodeProperties[] = [
       { name: 'Manufacturing', value: 'manufacturing' },
       { name: 'Media', value: 'media' },
       { name: 'Mining', value: 'mining' },
+      { name: 'Other Services', value: 'other_services' },
       { name: 'Public Sector', value: 'public_sector' },
       { name: 'Technology', value: 'technology' },
       { name: 'Telecom', value: 'telecom' },
