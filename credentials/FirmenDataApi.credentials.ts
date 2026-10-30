@@ -6,6 +6,8 @@ import type {
   INodeProperties,
 } from 'n8n-workflow';
 
+import { packageVersion } from '../nodes/version';
+
 export class FirmenDataApi implements ICredentialType {
   name = 'firmenDataApi';
 
@@ -34,6 +36,7 @@ export class FirmenDataApi implements ICredentialType {
     properties: {
       headers: {
         Authorization: '=Bearer {{$credentials.apiKey}}',
+        'X-FirmenData-Client': `n8n-node/${packageVersion}`,
       },
     },
   };
