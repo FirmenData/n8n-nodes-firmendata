@@ -58,7 +58,6 @@ const SKIP = new Map([
   ['limit', 'top-level "Limit" field'],
   ['eu_id', 'exact-ID lookup — that is what the Get operation is for'],
   ['cpv_code', 'requires the EU CPV vocabulary; Tender Role covers the common case'],
-  ['ust_idnr', 'expert identifier most companies do not publish'],
   ['avg_birth_year_min', 'average board birth year — obscure outside research use'],
   ['avg_birth_year_max', 'average board birth year — obscure outside research use'],
 ]);
@@ -71,6 +70,7 @@ const SKIP = new Map([
 // sheet but no P&L and no headcount, which is why revenue and employees are
 // scarce and the balance-sheet total is not.
 const DESCRIPTION_OVERRIDE = {
+  legal_status: 'Company lifecycle status from the company register and published insolvency notices',
   canton: 'Swiss address canton codes. Multiple selections are OR-merged with Federal State.',
   rechtsform: 'Legal form in the German, Swiss or Austrian company register; select several to match any',
   revenue_min:
@@ -89,7 +89,7 @@ const DESCRIPTION_OVERRIDE = {
     'WZ 2025 industry code at any level: 62, 62.1, 62.10 or 62.10.3. Note these are WZ 2025, not WZ 2008 — an old code such as 62.01 matches nothing. Use Industry for a plain-language picker instead',
   city: 'Registered seat city, spelled as in the register. Comma-separate for several; umlauts are optional (Munchen matches München)',
   fetch_realtime:
-    'Whether to also search the German registers live and add companies not yet indexed. Requires Search Query or Company Name, costs extra credits, and adds a few seconds',
+    'Search the German registers live; requires Search Query or Company Name and costs 5 credits instead of 1',
   cursor: 'Pagination cursor — pass pagination.next_cursor from a previous response to fetch the next page',
   company_name: 'Company name prefix. The legal-form suffix counts, so "Bosch GmbH" narrows against "Bosch"',
   person_name: 'Name of a board member, shareholder or partner, current or historical',
@@ -144,7 +144,7 @@ const OPTION_LABEL = {
   },
 };
 
-const SNAKE_CASE = /^[a-z0-9]+(_[a-z0-9]+)+$/;
+const LOWERCASE_SLUG = /^[a-z0-9]+(?:[_-][a-z0-9]+)*$/;
 
 const spec = JSON.parse(readFileSync(SPEC, 'utf8'));
 const params = spec.paths['/v1/companies/search'].get.parameters;
@@ -197,7 +197,7 @@ function fieldName(name) {
 function optionName(value, paramName) {
   const override = OPTION_LABEL[paramName]?.[value];
   if (override) return override;
-  return titleCase(SNAKE_CASE.test(value) ? value.split('_').join(' ') : value);
+  return LOWERCASE_SLUG.test(value) ? titleCase(value.replace(/[_-]/g, ' ')) : value;
 }
 
 /**
@@ -293,8 +293,13 @@ function buildField(param, { routing = true, useOverrides = true, allowAll = fal
     }
     lines.push('    ],');
   } else if (info.type === 'boolean') {
-    lines.push("    type: 'boolean',");
-    lines.push('    default: false,');
+    lines.push("    type: 'options',");
+    lines.push("    default: '',");
+    lines.push('    options: [');
+    lines.push("      { name: 'Any', value: '' },");
+    lines.push("      { name: 'No', value: false },");
+    lines.push("      { name: 'Yes', value: true },");
+    lines.push('    ],');
   } else if (info.type === 'integer' || info.type === 'number') {
     lines.push("    type: 'number',");
     const opts = [];
@@ -338,10 +343,13 @@ function routingValue(info) {
     return "'={{$value || undefined}}'";
   }
   if (info.type === 'boolean') {
-    return "'={{$value || undefined}}'";
+    return "'={{$value === \"\" ? undefined : $value}}'";
   }
   if (info.type === 'integer' || info.type === 'number') {
-    return "'={{$value || undefined}}'";
+    return "'={{$value}}'";
+  }
+  if (info.format === 'date') {
+    return "'={{$value ? String($value).slice(0, 10) : undefined}}'";
   }
   return "'={{$value || undefined}}'";
 }
@@ -371,11 +379,11 @@ const header = `/**
  * contract the firmendata TypeScript and Python SDKs generate their types
  * from. Edit the API, re-export the contract, re-run the generator.
  *
- * ${fields.length} filters, covering every query parameter of
- * GET /v1/companies/search except \`q\` and \`limit\`, which the node exposes as
- * top-level fields.
+ * GET /v1/companies/search query parameters except ${[...SKIP.keys()].map((name) => '\`' + name + '\`').join(', ')}.
+ * Omission reasons are documented in scripts/generate-filters.mjs.
  */
 
+/* eslint n8n-nodes-base/node-param-display-name-miscased: off -- Preserve official register labels from the API. */
 import type { INodeProperties } from 'n8n-workflow';
 
 export const searchFilters: INodeProperties[] = [
@@ -419,6 +427,7 @@ const feedOutput = `/**
  * Main filters for the Beta company event feeds.
  */
 
+/* eslint n8n-nodes-base/node-param-display-name-miscased: off -- Preserve official register labels from the API. */
 import type { INodeProperties } from 'n8n-workflow';
 
 ${feedCountries.join('\n\n')}
@@ -450,3 +459,5 @@ for (const [path, content] of outputs) {
     console.log(`wrote ${path}`);
   }
 }
+
+await import('./generate-version.mjs');

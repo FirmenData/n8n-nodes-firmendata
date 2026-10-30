@@ -93,6 +93,11 @@ jobs:
           # and the OIDC exchange has no registry to authenticate against.
           registry-url: 'https://registry.npmjs.org/'
 
+      - name: Check tag matches package version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node -e 'const { version } = require("./package.json"); if (process.env.RELEASE_TAG !== version) { console.error("Tag must equal package version " + version); process.exit(1); }'
+
       - name: Install dependencies
         # --ignore-scripts: this job can mint an OIDC token that npm accepts
         # for publishing, so no dependency's lifecycle script gets to run in

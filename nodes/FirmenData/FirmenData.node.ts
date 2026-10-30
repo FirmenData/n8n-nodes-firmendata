@@ -1,10 +1,11 @@
-import type { INodeType, INodeTypeDescription } from 'n8n-workflow';
+import type { INodeProperties, INodeType, INodeTypeDescription } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
+import { downloadFile, pairItems, searchPages } from './routing';
 import { searchFilters } from './searchFilters';
 
 /**
- * FirmenData node — German and Swiss company data.
+ * FirmenData node — German, Austrian and Swiss company data.
  *
  * Written in n8n's **declarative** style: each operation describes the HTTP
  * request it makes via `routing`, and n8n's own request helper executes it.
@@ -24,6 +25,9 @@ import { searchFilters } from './searchFilters';
  *
  * Options inside each `options: []` array are ordered alphabetically by
  * display name. n8n's linter enforces that; keep it when adding operations.
+ *
+ * Search paginates through routing.ts's searchPages; Download File fetches
+ * the presigned URL without our credential.
  */
 export class FirmenData implements INodeType {
   description: INodeTypeDescription = {
@@ -34,7 +38,7 @@ export class FirmenData implements INodeType {
     version: 1,
     subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
     description:
-      'Look up German and Swiss company data: register profiles, financials, shareholders and UBO',
+      'Look up German, Austrian and Swiss company data: register profiles, financials, shareholders and UBO',
     defaults: { name: 'FirmenData' },
     inputs: [NodeConnectionTypes.Main],
     outputs: [NodeConnectionTypes.Main],
@@ -62,7 +66,10 @@ export class FirmenData implements INodeType {
         name: 'resource',
         type: 'options',
         noDataExpression: true,
-        options: [{ name: 'Company', value: 'company' }],
+        options: [
+          { name: 'Company', value: 'company' },
+          { name: 'List', value: 'list' },
+        ],
         default: 'company',
       },
 
@@ -81,8 +88,17 @@ export class FirmenData implements INodeType {
             name: 'Autocomplete',
             value: 'autocomplete',
             action: 'Autocomplete a company name',
-            description: 'Suggest company names for a fragment. Costs no credits.',
-            routing: { request: { method: 'GET', url: '/v1/companies/autocomplete' } },
+            description:
+              'Suggest company names; costs 0 credits unless live register fetching is requested',
+            routing: {
+              request: { method: 'GET', url: '/v1/companies/autocomplete' },
+              output: {
+                postReceive: [
+                  { type: 'rootProperty', properties: { property: 'data' } },
+                  pairItems,
+                ],
+              },
+            },
           },
           {
             name: 'Download Document',
@@ -94,6 +110,7 @@ export class FirmenData implements INodeType {
                 method: 'GET',
                 url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/documents/download',
               },
+              output: { postReceive: [downloadFile, pairItems] },
             },
           },
           {
@@ -102,7 +119,11 @@ export class FirmenData implements INodeType {
             action: 'Get a company',
             description: 'Full profile for one company',
             routing: {
-              request: { method: 'GET', url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}' },
+              request: {
+                method: 'GET',
+                url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}',
+              },
+              output: { postReceive: [pairItems] },
             },
           },
           {
@@ -111,7 +132,11 @@ export class FirmenData implements INodeType {
             action: 'Get company financials',
             description: 'Multi-year financial statements, parsed into figures',
             routing: {
-              request: { method: 'GET', url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/financials' },
+              request: {
+                method: 'GET',
+                url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/financials',
+              },
+              output: { postReceive: [pairItems] },
             },
           },
           {
@@ -120,7 +145,11 @@ export class FirmenData implements INodeType {
             action: 'Get company register history',
             description: 'Chronological register history',
             routing: {
-              request: { method: 'GET', url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/history' },
+              request: {
+                method: 'GET',
+                url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/history',
+              },
+              output: { postReceive: [pairItems] },
             },
           },
           {
@@ -133,6 +162,7 @@ export class FirmenData implements INodeType {
                 method: 'GET',
                 url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/shareholders',
               },
+              output: { postReceive: [pairItems] },
             },
           },
           {
@@ -141,18 +171,29 @@ export class FirmenData implements INodeType {
             action: 'Get ultimate beneficial owners',
             description: 'Beneficial owners resolved through ownership chains',
             routing: {
-              request: { method: 'GET', url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/ubo' },
+              request: {
+                method: 'GET',
+                url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/ubo',
+              },
+              output: { postReceive: [pairItems] },
             },
           },
           {
             name: 'List Documents',
             value: 'listDocuments',
             action: 'List company documents',
-            description: 'Check the registry live for available documents, including older versions',
+            description:
+              'Check the registry live for available documents, including older versions',
             routing: {
               request: {
                 method: 'GET',
                 url: '=/v1/companies/{{ encodeURIComponent($parameter.euId) }}/documents',
+              },
+              output: {
+                postReceive: [
+                  { type: 'rootProperty', properties: { property: 'data' } },
+                  pairItems,
+                ],
               },
             },
           },
@@ -160,10 +201,139 @@ export class FirmenData implements INodeType {
             name: 'Search',
             value: 'search',
             action: 'Search companies',
-            description: 'Search the German and Swiss company registers with filters',
-            routing: { request: { method: 'GET', url: '/v1/companies/search' } },
+            description: 'Search the German, Austrian and Swiss company registers with filters',
+            routing: {
+              request: { method: 'GET', url: '/v1/companies/search' },
+              send: { paginate: true },
+              operations: { pagination: searchPages },
+              output: {
+                postReceive: [
+                  { type: 'rootProperty', properties: { property: 'data' } },
+                  pairItems,
+                ],
+              },
+            },
           },
         ],
+      },
+
+      {
+        displayName: 'Operation',
+        name: 'operation',
+        type: 'options',
+        noDataExpression: true,
+        displayOptions: { show: { resource: ['list'] } },
+        default: 'getMany',
+        options: [
+          {
+            name: 'Get',
+            value: 'get',
+            action: 'Get a list',
+            description: 'Get one page of companies in a list; costs 0 credits',
+            routing: {
+              request: {
+                method: 'GET',
+                url: '=/v1/lists/{{ encodeURIComponent($parameter.listId) }}',
+              },
+              output: { postReceive: [pairItems] },
+            },
+          },
+          {
+            name: 'Get Many',
+            value: 'getMany',
+            action: 'Get many lists',
+            description: 'Get your lists; costs 0 credits',
+            routing: {
+              request: { method: 'GET', url: '/v1/lists' },
+              output: {
+                postReceive: [
+                  { type: 'rootProperty', properties: { property: 'data' } },
+                  pairItems,
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        displayName: 'List ID',
+        name: 'listId',
+        type: 'number',
+        required: true,
+        default: 1,
+        typeOptions: { minValue: 1 },
+        description: 'Identifier returned by List → Get Many',
+        displayOptions: { show: { resource: ['list'], operation: ['get'] } },
+      },
+      {
+        displayName: 'Options',
+        name: 'listOptions',
+        type: 'collection',
+        default: {},
+        placeholder: 'Add Option',
+        displayOptions: { show: { resource: ['list'], operation: ['get'] } },
+        options: [
+          {
+            displayName: 'Cursor',
+            name: 'cursor',
+            type: 'string',
+            default: '',
+            description: 'Pass pagination.next_cursor from the previous page',
+            routing: { request: { qs: { cursor: '={{$value || undefined}}' } } },
+          },
+          {
+            displayName: 'Page Size',
+            name: 'pageSize',
+            type: 'number',
+            default: 100,
+            typeOptions: { minValue: 1, maxValue: 500 },
+            description: 'Companies to return per page; costs 0 credits',
+            routing: { request: { qs: { limit: '={{$value}}' } } },
+          },
+        ],
+      },
+
+      // These mirror the API's published credit costs (contract operation descriptions).
+      // Update this table whenever those published costs change.
+      // The contract links to https://firmendata.com/en/plans for these prices.
+      ...(
+        [
+          ['get', 10, 1],
+          ['history', 10, 1],
+          ['shareholders', 20, 10],
+          ['ubo', 50, 20],
+          ['autocomplete', 5, 0],
+        ] as const
+      ).map(([operation, liveCost, normalCost]): INodeProperties => ({
+        displayName: 'Options',
+        name: 'options',
+        type: 'collection',
+        default: {},
+        placeholder: 'Add Option',
+        displayOptions: { show: { resource: ['company'], operation: [operation] } },
+        options: [
+          {
+            displayName: 'Fetch Live From Register',
+            name: 'fetchRealtime',
+            type: 'boolean',
+            default: false,
+            description:
+              `Whether to fetch live from the German register; costs ${liveCost} credits instead of ${normalCost}` +
+              (operation === 'autocomplete'
+                ? '; requires at least 3 characters'
+                : '; no live surcharge for Austrian or Swiss companies'),
+            routing: { request: { qs: { fetch_realtime: '={{$value}}' } } },
+          },
+        ],
+      })),
+      {
+        displayName: 'Download File',
+        name: 'downloadFile',
+        type: 'boolean',
+        default: false,
+        description:
+          'Whether to return the file as binary data; the document call costs 60 credits (70 with live fetching), the file fetch is free, and the URL expires after 15 minutes',
+        displayOptions: { show: { resource: ['company'], operation: ['downloadDocument'] } },
       },
 
       // ---------------------------------------------------------------
@@ -191,7 +361,7 @@ export class FirmenData implements INodeType {
         required: true,
         default: '',
         placeholder: 'siemens',
-        description: 'Company-name fragment. At least 3 characters.',
+        description: 'Company-name fragment. At least 1 character.',
         displayOptions: { show: { resource: ['company'], operation: ['autocomplete'] } },
         routing: { request: { qs: { q: '={{$value}}' } } },
       },
@@ -224,23 +394,31 @@ export class FirmenData implements INodeType {
         displayOptions: {
           show: {
             resource: ['company'],
-            operation: ['get', 'financials', 'shareholders', 'ubo', 'history', 'listDocuments', 'downloadDocument'],
+            operation: [
+              'get',
+              'financials',
+              'shareholders',
+              'ubo',
+              'history',
+              'listDocuments',
+              'downloadDocument',
+            ],
           },
         },
       },
 
       // ---------------------------------------------------------------
-      // Get Financials — lean by default since API 1.1.0
+      // Get Financials
       // ---------------------------------------------------------------
       {
-        displayName: 'Include Line Items',
-        name: 'includeLineItems',
+        displayName: 'Line Items',
+        name: 'details',
         type: 'boolean',
-        default: false,
+        default: true,
         description:
           'Whether to include the structured profit-and-loss and balance-sheet rows as filed. They make the response many times larger.',
         displayOptions: { show: { resource: ['company'], operation: ['financials'] } },
-        routing: { request: { qs: { include: '={{ $value ? "line_items" : undefined }}' } } },
+        routing: { request: { qs: { details: '={{$value}}' } } },
       },
       {
         displayName: 'Years',
@@ -291,7 +469,8 @@ export class FirmenData implements INodeType {
         type: 'string',
         default: '',
         placeholder: 'file_12345',
-        description: 'Stored file identifier from the company detail; cannot be combined with Document ID',
+        description:
+          'Stored file identifier from the company detail; cannot be combined with Document ID',
         displayOptions: { show: { resource: ['company'], operation: ['downloadDocument'] } },
         routing: { request: { qs: { file_id: '={{$value || undefined}}' } } },
       },
@@ -320,14 +499,27 @@ export class FirmenData implements INodeType {
         routing: { request: { qs: { q: '={{$value || undefined}}' } } },
       },
       {
+        displayName: 'Return All',
+        name: 'returnAll',
+        type: 'boolean',
+        default: false,
+        // Include the billing consequences next to this choice.
+        // eslint-disable-next-line n8n-nodes-base/node-param-description-wrong-for-return-all
+        description:
+          'Whether to return all results up to the API cap of 10,000; each page of up to 50 results costs 1 credit, up to 200 credits',
+        displayOptions: { show: { resource: ['company'], operation: ['search'] } },
+      },
+      {
         displayName: 'Limit',
         name: 'searchLimit',
         type: 'number',
-        typeOptions: { minValue: 1, maxValue: 50 },
+        typeOptions: { minValue: 1, maxValue: 1000 },
         default: 50,
-        description: 'Max number of results to return',
-        displayOptions: { show: { resource: ['company'], operation: ['search'] } },
-        routing: { request: { qs: { limit: '={{$value}}' } } },
+        description:
+          'Max number of results to return; each page of up to 50 results costs 1 credit',
+        displayOptions: {
+          show: { resource: ['company'], operation: ['search'], returnAll: [false] },
+        },
       },
       {
         displayName: 'Filters',
@@ -336,8 +528,8 @@ export class FirmenData implements INodeType {
         placeholder: 'Add Filter',
         default: {},
         displayOptions: { show: { resource: ['company'], operation: ['search'] } },
-        // Generated from contracts/openapi.v1.json — every search filter the
-        // API exposes, with real pickers for the enum-backed ones. Regenerate
+        // Generated from contracts/openapi.v1.json using the deliberate subset
+        // in scripts/generate-filters.mjs, with enum pickers. Regenerate
         // with `npm run generate`; `npm run generate -- --check` fails CI when
         // the contract has moved and this file has not.
         options: searchFilters,
