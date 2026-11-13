@@ -24,6 +24,13 @@ const { FirmenDataTrigger } = require(join(work, 'FirmenDataTrigger.node.js'));
 const trigger = new FirmenDataTrigger();
 const contract = JSON.parse(readFileSync(join(root, 'contracts', 'openapi.v1.json'), 'utf8'));
 
+// Keep the launch policy in sync with scripts/generate-filters.mjs.
+const DARK_COUNTRIES = new Set(['GB']);
+function launchedEnum(values) {
+  return values.filter((value) => !DARK_COUNTRIES.has(value)
+    && (!DARK_COUNTRIES.has('GB') || (!value.endsWith(' (UK)') && !value.startsWith('GB-'))));
+}
+
 function harness(parameters = {}, state = {}, mode = 'trigger', handler) {
   const params = { event: 'newCompany', limit: 100, filters: {}, ...parameters };
   const http = mock.fn(handler ?? (async () => ({ data: [], next_cursor: 'empty', has_more: false })));
@@ -200,7 +207,7 @@ test('deduplication history is bounded while suppressing recent IDs', async () =
   assert.equal(h.state.seenIds.at(-1), 'new');
 });
 
-test('generated feed pickers match each endpoint enum and category is insolvency-only', () => {
+test('generated feed pickers match launched endpoint enum values and category is insolvency-only', () => {
   for (const [selectedEvent, path] of [
     ['newCompany', '/v1/feeds/new-companies'], ['insolvencyNotice', '/v1/feeds/insolvencies'],
   ]) {
@@ -209,7 +216,7 @@ test('generated feed pickers match each endpoint enum and category is insolvency
     const country = trigger.description.properties.find((p) => p.name === 'country'
       && p.displayOptions.show.event.includes(selectedEvent));
     assert.deepEqual(country.options.map((o) => o.value).filter(Boolean).sort(),
-      [...contract.components.schemas.Country.enum].sort());
+      launchedEnum(contract.components.schemas.Country.enum).sort());
     assert.equal(country.default, selectedEvent === 'newCompany' ? '' : 'DE');
     const resolve = (schema) => schema.$ref
       ? resolve(contract.components.schemas[schema.$ref.split('/').at(-1)])
@@ -220,7 +227,7 @@ test('generated feed pickers match each endpoint enum and category is insolvency
       const name = field.name.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
       const param = contract.paths[path].get.parameters.find((p) => p.name === name);
       assert.ok(param, `Missing parameter ${name} in ${path}`);
-      assert.deepEqual(field.options.map((o) => o.value).sort(), [...resolve(resolve(param.schema).items).enum].sort());
+      assert.deepEqual(field.options.map((o) => o.value).sort(), launchedEnum(resolve(resolve(param.schema).items).enum).sort());
     }
     assert.equal(filters.some((p) => p.name === 'category'), selectedEvent === 'insolvencyNotice');
     assert.ok(filters.some((p) => p.name === 'registerCourt' && p.type === 'multiOptions'));

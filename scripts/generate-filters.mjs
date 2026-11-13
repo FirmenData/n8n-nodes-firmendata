@@ -62,6 +62,9 @@ const SKIP = new Map([
   ['avg_birth_year_max', 'average board birth year — obscure outside research use'],
 ]);
 
+// not launched yet; the API hides these until launch — delete the entry to publish them
+const DARK_COUNTRIES = new Set(['GB']);
+
 // Where the spec's first sentence is not the whole story. A workflow that
 // filters on employee count and gets twelve results looks broken, so the
 // reason belongs in the tooltip rather than in a doc nobody opens mid-build.
@@ -270,6 +273,13 @@ function buildField(param, { routing = true, useOverrides = true, allowAll = fal
   if (info.enum) {
     // n8n's linter enforces alphabetical option ordering by name.
     const options = info.enum
+      .filter((value) => {
+        if (param.name === 'country') return !DARK_COUNTRIES.has(value);
+        if (!DARK_COUNTRIES.has('GB')) return true;
+        if (param.name === 'rechtsform') return !value.endsWith(' (UK)');
+        if (param.name === 'register_type') return !value.startsWith('GB-');
+        return true;
+      })
       .map((value) => ({ name: optionName(value, param.name), value }))
       .sort((a, b) => a.name.localeCompare(b.name, 'en'));
     if (allowAll) options.unshift({ name: 'All', value: '' });

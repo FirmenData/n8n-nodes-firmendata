@@ -22,7 +22,7 @@ and enter `n8n-nodes-firmendata` as the npm package name.
 | **Autocomplete** | One item per company-name suggestion, from **1 character**, optionally restricted by **Country** (All, DE, CH or AT). Costs 0 credits unless live register fetching is requested. |
 | **Search** | One item per company, with filters for country, canton, legal form, legal status, register court, federal state, city, industry, VAT ID, financial figures, founding date and more. |
 | **Get** | A single company profile |
-| **Get Financials** | A single object with multi-year financial statements. **Line Items** defaults to on; turn it off for headline figures and top-level positions only. **Years** shortens the history. |
+| **Get Financials** | A single object with multi-year financial statements. **Line Items** defaults to on; turn it off for headline figures and top-level positions only. **Scope** selects entity and/or group statements in `history.by_scope` (empty = both). **Year** selects one fiscal year (0 = all); do not combine it with **Years**, which shortens the history. |
 | **Get Shareholders** | A single cap table from the most recent Gesellschafterliste (GmbH/UG) |
 | **Get UBO** | A single object with ultimate beneficial owners and ownership chains |
 | **Get History** | A single object with chronological register history |
@@ -31,6 +31,11 @@ and enter `n8n-nodes-firmendata` as the npm package name.
 
 All Company Get operations, List Documents and Download Document take a
 **Company ID (`eu_id`)**, returned by Search and Autocomplete.
+An incomplete German ID without its register-number suffix or branch-court
+part (for example, `DEG1207.HRB14323` or `DER2707.HRB3910`) resolves when it
+identifies exactly one company. Responses always return the canonical `eu_id`.
+Ambiguous IDs return HTTP 409 with problem type `ambiguous-company-id` and a
+`candidates` array containing each match's `eu_id`, `name` and `is_deleted`.
 
 Search defaults to **Return All: off** and **Limit: 50**. Limit accepts 1–1,000
 results. Each page of up to 50 results costs **1 credit**; a limit of 120 can

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.1.0
+
+Regenerated from the updated v1 API contract. **Additive, non-breaking changes:**
+
+- Company lookups accept German IDs without their register-number suffix or
+  branch-court part when unique; responses retain the canonical `eu_id`.
+  Ambiguous IDs return HTTP 409 (`ambiguous-company-id`) with candidate IDs,
+  names and deletion status through n8n's default API error handling.
+- Get Financials: **Scope** selects entity statements (Jahresabschluss), group
+  statements (Konzernabschluss), or both by default. **Year** selects a single
+  fiscal year; leave it at 0 for all years and do not combine it with **Years**.
+- Updated responses include financial history by scope, group-account
+  references, previous registration and additional classification information.
+
 ## 2.0.0
 
 ### Breaking changes

@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { stringify } from 'node:querystring';
 import { after, mock, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -34,6 +35,13 @@ const properties = description.properties;
 const operations = properties.find((p) => p.name === 'operation').options;
 const filters = properties.find((p) => p.name === 'filters').options;
 const contract = JSON.parse(readFileSync(join(root, 'contracts', 'openapi.v1.json'), 'utf8'));
+
+// Keep the launch policy in sync with scripts/generate-filters.mjs.
+const DARK_COUNTRIES = new Set(['GB']);
+function launchedEnum(values) {
+  return values.filter((value) => !DARK_COUNTRIES.has(value)
+    && (!DARK_COUNTRIES.has('GB') || (!value.endsWith(' (UK)') && !value.startsWith('GB-'))));
+}
 
 // A small routing harness: resolve the declarations with n8n's own expression
 // evaluator, then send the resulting request to a mocked HTTP helper. n8n
@@ -117,12 +125,12 @@ test('document operations require Company ID and stay alphabetically ordered', (
   assert.deepEqual(names, [...names].sort((a, b) => a.localeCompare(b, 'en')));
 });
 
-test('Autocomplete defaults to all countries and sends each selected contract country', async () => {
+test('Autocomplete defaults to all countries and offers only launched contract countries', async () => {
   const country = properties.find((p) => p.name === 'country');
   assert.equal(country.default, '');
   assert.deepEqual(country.options.map((o) => o.value).filter(Boolean).sort(),
-    [...contract.components.schemas.Country.enum].sort());
-  for (const selected of [undefined, '', 'DE', 'CH', 'AT']) {
+    launchedEnum(contract.components.schemas.Country.enum).sort());
+  for (const selected of [undefined, '', ...launchedEnum(contract.components.schemas.Country.enum)]) {
     const http = mock.fn(async () => ({ data: [] }));
     await request({ operation: 'autocomplete', q: 'test', country: selected }, http);
     assert.deepEqual(http.mock.calls[0].arguments[0], {
@@ -213,13 +221,14 @@ test('Download Document offers every contract file type and requires a selection
   assert.ok(parameter.schema.enum.includes(fileType.default));
 });
 
-test('generated Country and Canton pickers include all contract enum values', () => {
+test('generated Country, Canton and Register Type pickers include launched contract enum values', () => {
   for (const [name, schema, type] of [
     ['country', 'Country', 'options'], ['canton', 'Canton', 'multiOptions'],
+    ['registerType', 'RegisterType', 'options'],
   ]) {
     const filter = filters.find((p) => p.name === name);
     assert.equal(filter.type, type);
-    assert.deepEqual(filter.options.map((o) => o.value).sort(), [...contract.components.schemas[schema].enum].sort());
+    assert.deepEqual(filter.options.map((o) => o.value).sort(), launchedEnum(contract.components.schemas[schema].enum).sort());
   }
   assert.equal(filters.find((p) => p.name === 'country').default, 'DE');
   assert.deepEqual(filters.find((p) => p.name === 'canton').default, []);
@@ -258,7 +267,7 @@ test('Search sends country, comma-joined cantons, federal states and Swiss legal
     qs: { country: 'CH', canton: 'GE,ZH', bundesland: 'Berlin', rechtsform: 'AG (CH),GmbH (CH)' },
   });
   const legalForm = filters.find((p) => p.name === 'rechtsform');
-  assert.deepEqual(legalForm.options.map((o) => o.value).sort(), [...contract.components.schemas.Rechtsform.enum].sort());
+  assert.deepEqual(legalForm.options.map((o) => o.value).sort(), launchedEnum(contract.components.schemas.Rechtsform.enum).sort());
 });
 
 test('Search omits empty location filters and leaves name ordering to the API', async () => {
@@ -283,6 +292,48 @@ test('Get Financials always sends details, defaulting to full line items, and op
     assert.deepEqual(http.mock.calls[0].arguments[0], {
       method: 'GET', url: 'https://api.firmendata.com/v1/companies/DE123/financials', qs,
     });
+  }
+});
+
+test('Get Financials sends scope as repeated query keys and a single fiscal year', async () => {
+  // The routing harness covers our declarations; n8n owns the transport.
+  // Its arrayFormat: repeat has the same scalar/array encoding as node:querystring.
+  assert.equal(description.requestDefaults.arrayFormat, 'repeat');
+  const http = mock.fn(async () => ({}));
+  await request({ operation: 'financials', euId: 'DE123', scope: ['entity', 'group'], year: 2024 }, http);
+  const { qs } = http.mock.calls[0].arguments[0];
+  assert.deepEqual(qs, { details: true, scope: ['entity', 'group'], year: 2024 });
+  assert.equal(stringify(qs), 'details=true&scope=entity&scope=group&year=2024');
+});
+
+test('Get Financials omits an empty scope and year zero, including defaults', async () => {
+  for (const options of [{}, { scope: [], year: 0 }]) {
+    const http = mock.fn(async () => ({}));
+    await request({ operation: 'financials', euId: 'DE123', ...options }, http);
+    assert.deepEqual(http.mock.calls[0].arguments[0].qs, { details: true });
+  }
+});
+
+test('Get Financials can select either scope and leaves year/years validation to the API', async () => {
+  for (const scope of ['entity', 'group']) {
+    const http = mock.fn(async () => ({}));
+    await request({ operation: 'financials', euId: 'DE123', scope: [scope], year: 2024, years: 3 }, http);
+    assert.deepEqual(http.mock.calls[0].arguments[0].qs, { details: true, scope: [scope], year: 2024, years: 3 });
+  }
+});
+
+test('company operations pass incomplete German IDs unchanged to the API', async () => {
+  for (const euId of ['DEG1207.HRB14323', 'DER2707.HRB3910']) {
+    const canonical = euId === 'DEG1207.HRB14323' ? 'DEG1207.HRB14323FF' : 'DER2707_R2701.HRB3910';
+    for (const operation of ['get', 'financials', 'history', 'shareholders', 'ubo', 'listDocuments', 'downloadDocument']) {
+      const response = { eu_id: canonical,
+        ...(operation === 'listDocuments' ? { data: [{ document_id: 'doc_1' }] } : {}) };
+      const http = mock.fn(async () => response);
+      const items = await request({ operation, euId }, http, {});
+      assert.deepEqual(items[0].json, operation === 'listDocuments' ? response.data[0] : response);
+      const url = new URL(http.mock.calls[0].arguments[0].url);
+      assert.equal(url.pathname.split('/')[3], euId);
+    }
   }
 });
 
@@ -489,6 +540,26 @@ test('RFC 7807 API messages surface for 401/402/404/422/429 and continueOnFail r
       assert.equal(result.length, 1);
       assert.equal(result[0].error.description, message);
     }
+  }
+});
+
+test('ambiguous company IDs retain the API message and candidates in n8n default errors', async () => {
+  const problem = contract.paths['/v1/companies/{eu_id}'].get.responses['409']
+    .content['application/problem+json'].examples.ambiguous_company_id.value;
+  const server = async () => { throw { message: 'Request failed with status code 409',
+    response: { status: 409, data: problem }, isAxiosError: true }; };
+  for (const operation of ['get', 'financials', 'history', 'shareholders', 'ubo', 'listDocuments', 'downloadDocument']) {
+    const parameters = { operation, euId: 'DER2707.HRB3910' };
+    await assert.rejects(request(parameters, server, {}), (error) => {
+      assert.ok(error instanceof NodeApiError);
+      assert.equal(error.httpCode, '409');
+      assert.equal(error.description, problem.message);
+      assert.deepEqual(error.context.data.candidates, problem.candidates);
+      return true;
+    });
+    const [item] = await request(parameters, server, { continueOnFail: true });
+    assert.equal(item.error.description, problem.message);
+    assert.deepEqual(item.error.context.data.candidates, problem.candidates);
   }
 });
 
