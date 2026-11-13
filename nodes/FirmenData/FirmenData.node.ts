@@ -390,7 +390,7 @@ export class FirmenData implements INodeType {
         default: '',
         placeholder: 'DEB1103R_HRB123456',
         description:
-          'The company identifier returned by Search or Autocomplete as <code>eu_id</code>',
+          'The company identifier returned by Search or Autocomplete as <code>eu_id</code>. A German ID without its register-number suffix (e.g. DEG1207.HRB14323) is accepted when it identifies exactly one company.',
         displayOptions: {
           show: {
             resource: ['company'],
@@ -419,6 +419,29 @@ export class FirmenData implements INodeType {
           'Whether to include the structured profit-and-loss and balance-sheet rows as filed. They make the response many times larger.',
         displayOptions: { show: { resource: ['company'], operation: ['financials'] } },
         routing: { request: { qs: { details: '={{$value}}' } } },
+      },
+      {
+        displayName: 'Scope',
+        name: 'scope',
+        type: 'multiOptions',
+        default: [],
+        options: [
+          { name: 'Entity Statements', value: 'entity', description: 'Single-entity Jahresabschluss' },
+          { name: 'Group Statements', value: 'group', description: 'Consolidated Konzernabschluss' },
+        ],
+        description: 'Which statements history.by_scope carries in full; leave empty for both',
+        displayOptions: { show: { resource: ['company'], operation: ['financials'] } },
+        routing: { request: { qs: { scope: '={{$value?.length ? $value : undefined}}' } } },
+      },
+      {
+        displayName: 'Year',
+        name: 'year',
+        type: 'number',
+        typeOptions: { minValue: 0, maxValue: 2100, numberPrecision: 0 },
+        default: 0,
+        description: 'Only this fiscal year in each series. 0 = all. Do not combine with Years.',
+        displayOptions: { show: { resource: ['company'], operation: ['financials'] } },
+        routing: { request: { qs: { year: '={{$value || undefined}}' } } },
       },
       {
         displayName: 'Years',

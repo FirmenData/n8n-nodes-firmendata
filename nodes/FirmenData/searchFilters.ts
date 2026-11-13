@@ -346,6 +346,7 @@ export const searchFilters: INodeProperties[] = [
       { name: 'VVaG', value: 'VVaG' },
       { name: 'VVaG (AT)', value: 'VVaG (AT)' },
       { name: 'Zweigniederlassung (CH)', value: 'Zweigniederlassung (CH)' },
+      { name: 'Zweigniederlassung ausl. Ges. (AT)', value: 'Zweigniederlassung ausl. Ges. (AT)' },
       { name: 'Zweigniederlassung ausl. Ges. (CH)', value: 'Zweigniederlassung ausl. Ges. (CH)' },
     ],
     description: 'Legal form in the German, Swiss or Austrian company register; select several to match any',
@@ -689,7 +690,7 @@ export const searchFilters: INodeProperties[] = [
     name: 'ustIdnr',
     type: 'string',
     default: '',
-    description: 'Exact VAT number from the company\'s Impressum or EU public-procurement (TED) notices',
+    description: 'Exact VAT identification number',
     routing: { request: { qs: { ust_idnr: '={{$value || undefined}}' } } },
   },
 ];
