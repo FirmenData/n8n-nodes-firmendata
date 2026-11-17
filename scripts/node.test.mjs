@@ -37,7 +37,7 @@ const filters = properties.find((p) => p.name === 'filters').options;
 const contract = JSON.parse(readFileSync(join(root, 'contracts', 'openapi.v1.json'), 'utf8'));
 
 // Keep the launch policy in sync with scripts/generate-filters.mjs.
-const DARK_COUNTRIES = new Set(['GB']);
+const DARK_COUNTRIES = new Set(); // mirrors scripts/generate-filters.mjs
 function launchedEnum(values) {
   return values.filter((value) => !DARK_COUNTRIES.has(value)
     && (!DARK_COUNTRIES.has('GB') || (!value.endsWith(' (UK)') && !value.startsWith('GB-'))));

@@ -19,7 +19,7 @@ and enter `n8n-nodes-firmendata` as the npm package name.
 
 | Operation | What it returns |
 |---|---|
-| **Autocomplete** | One item per company-name suggestion, from **1 character**, optionally restricted by **Country** (All, DE, CH or AT). Costs 0 credits unless live register fetching is requested. |
+| **Autocomplete** | One item per company-name suggestion, from **1 character**, optionally restricted by **Country** (All, DE, CH, AT or GB). Costs 0 credits unless live register fetching is requested. |
 | **Search** | One item per company, with filters for country, canton, legal form, legal status, register court, federal state, city, industry, VAT ID, financial figures, founding date and more. |
 | **Get** | A single company profile |
 | **Get Financials** | A single object with multi-year financial statements. **Line Items** defaults to on; turn it off for headline figures and top-level positions only. **Scope** selects entity and/or group statements in `history.by_scope` (empty = both). **Year** selects one fiscal year (0 = all); do not combine it with **Years**, which shortens the history. |
@@ -115,7 +115,7 @@ Add **FirmenData Trigger**, select your **FirmenData API** credential, choose an
 
 | Event | Feed | Filters |
 |---|---|---|
-| **New Company** | `/v1/feeds/new-companies` | Country (All, DE, CH or AT), Federal State, Canton, Register Court, Legal Form, Industry |
+| **New Company** | `/v1/feeds/new-companies` | Country (All, DE, CH, AT or GB), Federal State, Canton, Register Court, Legal Form, Industry |
 | **Insolvency Notice** | `/v1/feeds/insolvencies` | Country (DE by default, CH or AT), Federal State, Canton, Register Court, Legal Form, Industry, Category |
 
 The first scheduled poll starts from now. Changing the event or filters starts
