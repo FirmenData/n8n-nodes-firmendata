@@ -349,6 +349,7 @@ export class FirmenData implements INodeType {
           { name: 'AT', value: 'AT' },
           { name: 'CH', value: 'CH' },
           { name: 'DE', value: 'DE' },
+          { name: 'GB', value: 'GB' },
         ],
         description: 'Restrict company-name suggestions to one country',
         displayOptions: { show: { resource: ['company'], operation: ['autocomplete'] } },

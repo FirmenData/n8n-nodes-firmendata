@@ -115,7 +115,7 @@ Add **FirmenData Trigger**, select your **FirmenData API** credential, choose an
 
 | Event | Feed | Filters |
 |---|---|---|
-| **New Company** | `/v1/feeds/new-companies` | Country (All, DE, CH or AT), Federal State, Canton, Register Court, Legal Form, Industry |
+| **New Company** | `/v1/feeds/new-companies` | Country (All, DE, CH, AT or GB), Federal State, Canton, Register Court, Legal Form, Industry |
 | **Insolvency Notice** | `/v1/feeds/insolvencies` | Country (DE by default, CH or AT), Federal State, Canton, Register Court, Legal Form, Industry, Category |
 
 The first scheduled poll starts from now. Changing the event or filters starts

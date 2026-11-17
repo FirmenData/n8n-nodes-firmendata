@@ -62,8 +62,8 @@ const SKIP = new Map([
   ['avg_birth_year_max', 'average board birth year — obscure outside research use'],
 ]);
 
-// not launched yet; the API hides these until launch — delete the entry to publish them
-const DARK_COUNTRIES = new Set(['GB']);
+// countries not launched yet; the API hides these until launch (GB launched with the UK flip)
+const DARK_COUNTRIES = new Set();
 
 // Where the spec's first sentence is not the whole story. A workflow that
 // filters on employee count and gets twelve results looks broken, so the

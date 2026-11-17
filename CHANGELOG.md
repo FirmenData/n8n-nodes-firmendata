@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+Regenerated from the UK-flip API contract. **Additive, non-breaking:** GB is
+now offered as Country (search, autocomplete, feeds), with the UK legal forms
+and register types; `companies_house` and `uk_sic_2007` come through the
+contract.
+
 ## 2.1.0
 
 Regenerated from the updated v1 API contract. **Additive, non-breaking changes:**

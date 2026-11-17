@@ -25,7 +25,7 @@ const trigger = new FirmenDataTrigger();
 const contract = JSON.parse(readFileSync(join(root, 'contracts', 'openapi.v1.json'), 'utf8'));
 
 // Keep the launch policy in sync with scripts/generate-filters.mjs.
-const DARK_COUNTRIES = new Set(['GB']);
+const DARK_COUNTRIES = new Set();
 function launchedEnum(values) {
   return values.filter((value) => !DARK_COUNTRIES.has(value)
     && (!DARK_COUNTRIES.has('GB') || (!value.endsWith(' (UK)') && !value.startsWith('GB-'))));
