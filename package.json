@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-firmendata",
   "version": "2.1.0",
-  "description": "n8n node for firmendata — German, Austrian and Swiss company register data: profiles, financials, shareholders and UBO",
+  "description": "n8n node for firmendata — German, Austrian, Swiss and UK company register data: profiles, financials, shareholders and UBO",
   "license": "MIT",
   "homepage": "https://firmendata.com",
   "keywords": [
@@ -11,6 +11,8 @@
     "firmendata",
     "germany",
     "german",
+    "uk",
+    "companies-house",
     "company-data",
     "business-registry",
     "handelsregister",
