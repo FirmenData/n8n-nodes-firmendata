@@ -67,6 +67,18 @@ export const searchFilters: INodeProperties[] = [
     routing: { request: { qs: { company_name: '={{$value || undefined}}' } } },
   },
   {
+    displayName: 'Company Name Match',
+    name: 'companyNameMatch',
+    type: 'options',
+    default: 'prefix',
+    options: [
+      { name: 'Prefix', value: 'prefix' },
+      { name: 'Words', value: 'words' },
+    ],
+    description: 'How company_name is matched; only valid together with company_name (not with q)',
+    routing: { request: { qs: { company_name_match: '={{$value || undefined}}' } } },
+  },
+  {
     displayName: 'Company Size',
     name: 'companySize',
     type: 'multiOptions',
